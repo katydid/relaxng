@@ -97,31 +97,35 @@ func scanFiles() testSuite {
 	return suite
 }
 
+func testOneCase(t *testing.T, spec testCase) {
+	katydid, err := Translate(spec.Content)
+	if spec.expectError() {
+		if err == nil {
+			t.Errorf("expected error for %s", spec.Filename)
+		}
+		return
+	}
+	if err != nil {
+		t.Errorf("unexpected error %s for %s", err, spec.Filename)
+		return
+	}
+	for _, xml := range spec.Xmls {
+		err = Validate(katydid, xml.Content)
+		if xml.expectError() {
+			if err == nil {
+				t.Errorf("expected error for %s", xml.Filename)
+			}
+			return
+		}
+		if err != nil {
+			t.Errorf("got unexpected error %s for %s", err, xml.Filename)
+		}
+	}
+}
+
 func TestSuite(t *testing.T) {
 	suite := scanFiles()
 	for _, spec := range suite {
-		katydid, err := Translate(spec.Content)
-		if spec.expectError() {
-			if err == nil {
-				t.Errorf("expected error for %s", spec.Filename)
-			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("unexpected error %s for %s", err, spec.Filename)
-			continue
-		}
-		for _, xml := range spec.Xmls {
-			err = Validate(katydid, xml.Content)
-			if xml.expectError() {
-				if err == nil {
-					t.Errorf("expected error for %s", xml.Filename)
-				}
-				continue
-			}
-			if err != nil {
-				t.Errorf("got unexpected error %s for %s", err, xml.Filename)
-			}
-		}
+		testOneCase(t, spec)
 	}
 }
