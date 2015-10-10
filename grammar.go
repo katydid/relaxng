@@ -21,11 +21,11 @@ import (
 func ParseGrammar(buf []byte) (*Grammar, error) {
 	g := &Grammar{}
 	err := xml.Unmarshal(buf, g)
-	return nil, err
+	return g, err
 }
 
 func (g *Grammar) String() string {
-	data, err := xml.Marshal(g)
+	data, err := xml.MarshalIndent(g, "", "\t")
 	if err != nil {
 		panic(err)
 	}
