@@ -25,9 +25,11 @@ import (
 )
 
 type testCase struct {
-	Filename string
-	Content  []byte
-	Xmls     []xmlCase
+	Filename       string
+	Content        []byte
+	SimpleFilename string
+	SimpleContent  []byte
+	Xmls           []xmlCase
 }
 
 func (this testCase) expectError() bool {
@@ -64,12 +66,21 @@ func scanFiles() testSuite {
 		}
 		c := cases[number]
 		if extension == ".rng" {
-			c.Filename = path
-			data, err := ioutil.ReadFile(path)
-			if err != nil {
-				return err
+			if strings.HasSuffix(path, "s.rng") {
+				c.SimpleFilename = path
+				data, err := ioutil.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				c.SimpleContent = data
+			} else {
+				c.Filename = path
+				data, err := ioutil.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				c.Content = data
 			}
-			c.Content = data
 		} else {
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
@@ -123,9 +134,33 @@ func testOneCase(t *testing.T, spec testCase) {
 	}
 }
 
-func TestSuite(t *testing.T) {
+func testSimple(t *testing.T, spec testCase) {
+	katydid, err := Translate(spec.SimpleContent)
+	if err != nil {
+		t.Errorf("unexpected error %s for %s", err, spec.SimpleFilename)
+		return
+	}
+	for _, xml := range spec.Xmls {
+		err = Validate(katydid, xml.Content)
+		if xml.expectError() {
+			if err == nil {
+				t.Errorf("expected error for %s", xml.Filename)
+			}
+			return
+		}
+		if err != nil {
+			t.Errorf("got unexpected error %s for %s", err, xml.Filename)
+		}
+	}
+}
+
+func TestSimpleSuite(t *testing.T) {
 	suite := scanFiles()
 	for _, spec := range suite {
-		testOneCase(t, spec)
+		if len(spec.SimpleFilename) == 0 {
+			//skipping incorrect specifications
+			continue
+		}
+		testSimple(t, spec)
 	}
 }
