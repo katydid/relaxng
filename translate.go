@@ -133,6 +133,9 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 		panic("nsName is not supported")
 	}
 	if n.Name != nil {
+		if attr {
+			return relapse.NewName("@" + n.Name.Text)
+		}
 		return relapse.NewName(n.Name.Text)
 	}
 	panic(fmt.Sprintf("unreachable nameclass %v", n))

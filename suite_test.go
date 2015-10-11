@@ -141,10 +141,16 @@ func testSimple(t *testing.T, spec testCase) {
 			t.Errorf("recover for %s: %#v", spec.SimpleFilename, r)
 		}
 	}()
+	g, err := ParseGrammar(spec.SimpleContent)
+	if err != nil {
+		t.Fatalf("unparsable %s", spec.SimpleFilename)
+	}
 	katydid, err := Translate(spec.SimpleContent)
 	if err != nil {
 		t.Fatalf("unexpected error %s for %s", err, spec.SimpleFilename)
 	}
+	t.Logf("Translated From:\n%s", g.String())
+	t.Logf("To:\n%s", katydid.String())
 	for _, xml := range spec.Xmls {
 		err = Validate(katydid, xml.Content)
 		if xml.expectError() {
