@@ -41,7 +41,6 @@ func newLeaf(exprStr string) *relapse.Pattern {
 	}}
 }
 
-//todo remember attr does not care about order.
 func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 	if p.NotAllowed != nil {
 		return relapse.NewEmptySet()
@@ -50,13 +49,20 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return relapse.NewEmpty()
 	}
 	if p.Text != nil {
-		return newLeaf(funcs.Sprint(funcs.TypeString()))
+		return relapse.NewZeroOrMore(newLeaf(funcs.Sprint(funcs.TypeString())))
 	}
 	if p.Data != nil {
-		panic("todo: data leaf")
+		if p.Data.Except == nil {
+			return newLeaf(funcs.Sprint(funcs.TypeString()))
+		}
+		expr := translateLeaf(p.Data.Except, funcs.StringVar())
+		return newLeaf(funcs.Sprint(funcs.And(funcs.TypeString(), funcs.Not(expr))))
 	}
 	if p.Value != nil {
-		panic("todo: value leaf")
+		if p.Value.IsString() {
+			return newLeaf(funcs.Sprint(funcs.StringEq(funcs.StringConst(p.Value.Text), funcs.StringVar())))
+		}
+		return newLeaf(funcs.Sprint(funcs.StringEq(funcs.StringConst(p.Value.Text), Tokenize(funcs.StringVar()))))
 	}
 	if p.List != nil {
 		panic("todo: list")
@@ -78,12 +84,6 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		right := translatePattern(p.Choice.Right, attr)
 		return relapse.NewOr(left, right)
 	}
-	//http://books.xmlschemata.org/relaxng/relax-CHP-6-SECT-1.html
-	//  Because the order of attributes isn't considered significant by the XML 1.0 specification,
-	//  the meaning of the group compositor is slightly less straightforward than it appears at first.
-	//  Here's the semantic quirk: the group compositor says,
-	//  "Check that the patterns included in this compositor appear in the specified order,
-	//  except for attributes, which are allowed to appear in any order in the start tag."
 	if p.Group != nil {
 		left := translatePattern(p.Group.Left, attr)
 		right := translatePattern(p.Group.Right, attr)
@@ -107,5 +107,9 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 }
 
 func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
-	return nil
+	panic("todo nameclass")
+}
+
+func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
+	panic("todo translate Leaf")
 }

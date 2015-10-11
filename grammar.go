@@ -67,8 +67,9 @@ type Grammar struct {
 }
 
 type Define struct {
-	Name    string `xml:"name,attr"`
-	Element Pair   `xml:"element"`
+	Name string `xml:"name,attr"`
+	//Left is Name and Right is Pattern
+	Element Pair `xml:"element"`
 }
 
 type NameOrPattern struct {
@@ -78,12 +79,19 @@ type NameOrPattern struct {
 	Data       *Data       `xml:"data"`
 	Value      *Value      `xml:"value"`
 	List       *List       `xml:"list"`
-	Attribute  *Pair       `xml:"attribute"`
-	Ref        *Ref        `xml:"ref"`
-	OneOrMore  *OneOrMore  `xml:"oneOrMore"`
-	Choice     *Pair       `xml:"choice"`
-	Group      *Pair       `xml:"group"`
-	Interleave *Pair       `xml:"interleave"`
+	//Attribute does not care about order, left is Name and Right is Pattern
+	Attribute *Pair      `xml:"attribute"`
+	Ref       *Ref       `xml:"ref"`
+	OneOrMore *OneOrMore `xml:"oneOrMore"`
+	Choice    *Pair      `xml:"choice"`
+	//http://books.xmlschemata.org/relaxng/relax-CHP-6-SECT-1.html
+	//  Because the order of attributes isn't considered significant by the XML 1.0 specification,
+	//  the meaning of the group compositor is slightly less straightforward than it appears at first.
+	//  Here's the semantic quirk: the group compositor says,
+	//  "Check that the patterns included in this compositor appear in the specified order,
+	//  except for attributes, which are allowed to appear in any order in the start tag."
+	Group      *Pair `xml:"group"`
+	Interleave *Pair `xml:"interleave"`
 
 	AnyName *AnyNameClass  `xml:"anyName"`
 	NsName  *NsNameClass   `xml:"nsName"`
@@ -153,6 +161,12 @@ type Text struct {
 	XMLName xml.Name `xml:"text"`
 }
 
+//http://books.xmlschemata.org/relaxng/ch17-77040.html
+//http://books.xmlschemata.org/relaxng/relax-CHP-8-SECT-1.html
+//  Even though katydid could easily support more types,
+//  only Type string and token are currently supported.
+//  This also means that Param is not currently supported.
+//	DatatypeLibrary is not supported.
 type Data struct {
 	XMLName         xml.Name       `xml:"data"`
 	Type            string         `xml:"type,attr"`
@@ -161,12 +175,28 @@ type Data struct {
 	Except          *NameOrPattern `xml:"except"`
 }
 
+//Only Type: string and Type: token are supported
+//  An empty Type value implies a default value of token
+func (this *Data) IsString() bool {
+	return this.Type == "string"
+}
+
+//http://books.xmlschemata.org/relaxng/ch17-77225.html
+//	Match a value in a text node
+//	DatatypeLibrary and Ns fields are not supported
 type Value struct {
 	XMLName         xml.Name `xml:"value"`
 	DatatypeLibrary string   `xml:"datatypeLibrary,attr"`
 	Type            string   `xml:"type,attr"`
 	Ns              string   `xml:"ns,attr"`
 	Text            string   `xml:",chardata"`
+}
+
+//http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
+//  Only Type: string and Type: token are supported
+//  An empty Type value implies a default value of token
+func (this *Value) IsString() bool {
+	return this.Type == "string"
 }
 
 type List struct {
