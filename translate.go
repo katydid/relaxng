@@ -67,7 +67,7 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 	}
 	if p.List != nil {
 		regexStr := listToRegex(p.List.NameOrPattern)
-		return newLeaf(funcs.Sprint(funcs.Regex(funcs.StringConst(regexStr), funcs.StringVar())))
+		return newLeaf(funcs.Sprint(funcs.Regex(funcs.StringConst(regexStr), Token(funcs.StringVar()))))
 	}
 	if p.Attribute != nil {
 		nameExpr := translateNameClass(p.Attribute.Left, true)
