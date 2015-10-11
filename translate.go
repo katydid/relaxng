@@ -123,6 +123,13 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 		return relapse.NewAnyNameExcept(except)
 	}
 	if n.NsName != nil {
+		if len(n.NsName.Ns) == 0 {
+			if n.NsName.Except != nil {
+				return relapse.NewAnyNameExcept(translateNameClass(n.NsName.Except, attr))
+			} else {
+				return relapse.NewAnyName()
+			}
+		}
 		panic("nsName is not supported")
 	}
 	if n.Name != nil {
