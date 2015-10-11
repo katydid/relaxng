@@ -61,6 +61,7 @@ func TestSimpleParseChoice(t *testing.T) {
   </start>
   <define name="element1">
     <element>
+    <name>foo</name>
     <choice> 
       <ref name="a"/>
       <ref name="b"/>

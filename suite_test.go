@@ -135,6 +135,12 @@ func testOneCase(t *testing.T, spec testCase) {
 }
 
 func testSimple(t *testing.T, spec testCase) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			t.Errorf("recover for %s: %#v", spec.SimpleFilename, r)
+		}
+	}()
 	katydid, err := Translate(spec.SimpleContent)
 	if err != nil {
 		t.Fatalf("unexpected error %s for %s", err, spec.SimpleFilename)

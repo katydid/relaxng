@@ -19,11 +19,11 @@ import (
 )
 
 func Translate(relax []byte) (*relapse.Grammar, error) {
-	_, err := ParseGrammar(relax)
+	g, err := ParseGrammar(relax)
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return translate(g)
 }
 
 func Validate(katydid *relapse.Grammar, xmlContent []byte) error {

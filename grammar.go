@@ -67,8 +67,8 @@ type Grammar struct {
 }
 
 type Define struct {
-	Name    string         `xml:"name,attr"`
-	Element *NameOrPattern `xml:"element"`
+	Name    string `xml:"name,attr"`
+	Element Pair   `xml:"element"`
 }
 
 type NameOrPattern struct {
@@ -78,7 +78,7 @@ type NameOrPattern struct {
 	Data       *Data       `xml:"data"`
 	Value      *Value      `xml:"value"`
 	List       *List       `xml:"list"`
-	Attribute  *Attribute  `xml:"attribute"`
+	Attribute  *Pair       `xml:"attribute"`
 	Ref        *Ref        `xml:"ref"`
 	OneOrMore  *OneOrMore  `xml:"oneOrMore"`
 	Choice     *Pair       `xml:"choice"`
@@ -88,6 +88,20 @@ type NameOrPattern struct {
 	AnyName *AnyNameClass  `xml:"anyName"`
 	NsName  *NsNameClass   `xml:"nsName"`
 	Name    *NameNameClass `xml:"name"`
+}
+
+func (this *NameOrPattern) IsPattern() bool {
+	return !this.IsNameClass()
+}
+
+func (this *NameOrPattern) IsNameClass() bool {
+	if this.AnyName != nil || this.NsName != nil || this.Name != nil {
+		return true
+	}
+	if this.Choice != nil {
+		return this.Choice.Left.IsNameClass()
+	}
+	return false
 }
 
 func (this *NameOrPattern) unmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -112,10 +126,16 @@ func (this *NameOrPattern) unmarshalXML(d *xml.Decoder, start xml.StartElement) 
 
 func (this *NameOrPattern) marshalXML(e *xml.Encoder, start xml.StartElement) error {
 	v := reflect.ValueOf(this).Elem()
+	t := reflect.TypeOf(this).Elem()
 	numFields := v.NumField()
 	for i := 0; i < numFields; i++ {
 		if !v.Field(i).IsNil() {
-			return e.Encode(v.Field(i).Interface())
+			newStart := xml.StartElement{
+				Name: xml.Name{
+					Local: t.Field(i).Tag.Get("xml"),
+				},
+			}
+			return e.EncodeElement(v.Field(i).Interface(), newStart)
 		}
 	}
 	return fmt.Errorf("unset pattern")
@@ -151,11 +171,6 @@ type Value struct {
 
 type List struct {
 	XMLName xml.Name `xml:"list"`
-	*NameOrPattern
-}
-
-type Attribute struct {
-	XMLName xml.Name `xml:"attribute"`
 	*NameOrPattern
 }
 
@@ -207,14 +222,26 @@ func (this *Pair) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	if err := this.Right.unmarshalXML(d, *s); err != nil {
 		return err
 	}
-	return d.Skip()
+	for {
+		t, err := d.Token()
+		if err != nil {
+			return err
+		}
+		//fmt.Printf("\t end tokens %T %s\n", t, t)
+		e, ok := t.(xml.EndElement)
+		if ok && e.Name.Local == start.Name.Local {
+			break
+		}
+	}
+	//fmt.Printf("\t unmarshaled %#v\n", this)
+	return nil
 }
 
 func (this *Pair) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	//fmt.Printf("marshaling pair %s %#v\n", start.Name.Local, this)
 	if err := e.EncodeToken(start); err != nil {
 		return err
 	}
-	//fmt.Printf("marshaling pair\n")
 	if err := this.Left.marshalXML(e, start); err != nil {
 		return err
 	}
