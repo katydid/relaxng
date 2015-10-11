@@ -188,12 +188,12 @@ func skipToStart(d *xml.Decoder) (*xml.StartElement, error) {
 }
 
 func (this *Pair) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	fmt.Printf("unmarshaling pair %s\n", start.Name.Local)
+	//fmt.Printf("unmarshaling pair %s\n", start.Name.Local)
 	s, err := skipToStart(d)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("\t %s\n", s.Name.Local)
+	//fmt.Printf("\t %s\n", s.Name.Local)
 	this.Left = &NameOrPattern{}
 	if err := this.Left.unmarshalXML(d, *s); err != nil {
 		return err
@@ -202,7 +202,7 @@ func (this *Pair) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("\t %s\n", s.Name.Local)
+	//fmt.Printf("\t %s\n", s.Name.Local)
 	this.Right = &NameOrPattern{}
 	if err := this.Right.unmarshalXML(d, *s); err != nil {
 		return err
@@ -214,7 +214,7 @@ func (this *Pair) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	if err := e.EncodeToken(start); err != nil {
 		return err
 	}
-	fmt.Printf("marshaling pair\n")
+	//fmt.Printf("marshaling pair\n")
 	if err := this.Left.marshalXML(e, start); err != nil {
 		return err
 	}
