@@ -17,6 +17,7 @@ package relaxng
 import (
 	"encoding/xml"
 	"fmt"
+	"reflect"
 )
 
 func ParseGrammar(buf []byte) (*Grammar, error) {
@@ -71,178 +72,101 @@ type Define struct {
 }
 
 type NameOrPattern struct {
-	NotAllowed *Empty         `xml:"notAllowed"`
-	Empty      *Empty         `xml:"empty"`
-	Text       *Empty         `xml:"text"`
-	Data       *Data          `xml:"data"`
-	Value      *Value         `xml:"value"`
-	List       *NameOrPattern `xml:"list"`
-	Attribute  *NameOrPattern `xml:"attribute"`
-	Ref        *Ref           `xml:"ref"`
-	OneOrMore  *NameOrPattern `xml:"oneOrMore"`
-	Choice     *Pair          `xml:"choice"`
-	Group      *Pair          `xml:"group"`
-	Interleave *Pair          `xml:"interleave"`
+	NotAllowed *NotAllowed `xml:"notAllowed"`
+	Empty      *Empty      `xml:"empty"`
+	Text       *Text       `xml:"text"`
+	Data       *Data       `xml:"data"`
+	Value      *Value      `xml:"value"`
+	List       *List       `xml:"list"`
+	Attribute  *Attribute  `xml:"attribute"`
+	Ref        *Ref        `xml:"ref"`
+	OneOrMore  *OneOrMore  `xml:"oneOrMore"`
+	Choice     *Pair       `xml:"choice"`
+	Group      *Pair       `xml:"group"`
+	Interleave *Pair       `xml:"interleave"`
 
 	AnyName *AnyNameClass  `xml:"anyName"`
 	NsName  *NsNameClass   `xml:"nsName"`
 	Name    *NameNameClass `xml:"name"`
 }
 
-// func (this *NameOrPattern) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-// 	name := start.Name.Local
-// 	_, isNameOrPattern := nameOrPattern[name]
-// 	if isNameOrPattern {
-// 		return this.unmarshalXML(d, start)
-// 	}
-// 	var s xml.StartElement
-// 	var ok bool
-// 	for !ok {
-// 		t, err := d.Token()
-// 		if err != nil {
-// 			return err
-// 		}
-// 		s, ok = t.(xml.StartElement)
-// 	}
-// 	if err := this.unmarshalXML(d, s); err != nil {
-// 		return err
-// 	}
-// 	return d.Skip()
-// }
-
-var nameOrPattern = map[string]struct{}{
-	"notAllowed": struct{}{},
-	"empty":      struct{}{},
-	"text":       struct{}{},
-	"data":       struct{}{},
-	"value":      struct{}{},
-	"list":       struct{}{},
-	"attribute":  struct{}{},
-	"ref":        struct{}{},
-	"oneOrMore":  struct{}{},
-	"choice":     struct{}{},
-	"group":      struct{}{},
-	"interleave": struct{}{},
-	"anyName":    struct{}{},
-	"nsName":     struct{}{},
-	"name":       struct{}{},
-}
-
 func (this *NameOrPattern) unmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	switch start.Name.Local {
-	case "notAllowed":
-		this.NotAllowed = &Empty{}
-		return d.DecodeElement(this.NotAllowed, &start)
-	case "empty":
-		this.Empty = &Empty{}
-		return d.DecodeElement(this.Empty, &start)
-	case "text":
-		this.Text = &Empty{}
-		return d.DecodeElement(this.Text, &start)
-	case "data":
-		this.Data = &Data{}
-		return d.DecodeElement(this.Data, &start)
-	case "value":
-		this.Value = &Value{}
-		return d.DecodeElement(this.Value, &start)
-	case "list":
-		this.List = &NameOrPattern{}
-		return d.DecodeElement(this.List, &start)
-	case "attribute":
-		this.Attribute = &NameOrPattern{}
-		return d.DecodeElement(this.Attribute, &start)
-	case "ref":
-		this.Ref = &Ref{}
-		return d.DecodeElement(this.Ref, &start)
-	case "oneOrMore":
-		this.OneOrMore = &NameOrPattern{}
-		return d.DecodeElement(this.OneOrMore, &start)
-	case "choice":
-		this.Choice = &Pair{}
-		return d.DecodeElement(this.Choice, &start)
-	case "group":
-		this.Group = &Pair{}
-		return d.DecodeElement(this.Group, &start)
-	case "interleave":
-		this.Interleave = &Pair{}
-		return d.DecodeElement(this.Interleave, &start)
-	case "anyName":
-		this.AnyName = &AnyNameClass{}
-		return d.DecodeElement(this.AnyName, &start)
-	case "nsName":
-		this.NsName = &NsNameClass{}
-		return d.DecodeElement(this.NsName, &start)
-	case "name":
-		this.Name = &NameNameClass{}
-		return d.DecodeElement(this.Name, &start)
+	t := reflect.TypeOf(this).Elem()
+	numFields := t.NumField()
+	v := reflect.ValueOf(this).Elem()
+	for i := 0; i < numFields; i++ {
+		f := t.Field(i)
+		xmlTag := f.Tag.Get("xml")
+		if xmlTag == start.Name.Local {
+			n := reflect.New(f.Type)
+			err := d.DecodeElement(n.Interface(), &start)
+			if err != nil {
+				return err
+			}
+			v.Field(i).Set(n.Elem())
+			return nil
+		}
 	}
 	return fmt.Errorf("unknown pattern " + start.Name.Local)
 }
 
-type Empty struct{}
+func (this *NameOrPattern) marshalXML(e *xml.Encoder, start xml.StartElement) error {
+	v := reflect.ValueOf(this).Elem()
+	numFields := v.NumField()
+	for i := 0; i < numFields; i++ {
+		if !v.Field(i).IsNil() {
+			return e.Encode(v.Field(i).Interface())
+		}
+	}
+	return fmt.Errorf("unset pattern")
+}
+
+type NotAllowed struct {
+	XMLName xml.Name `xml:"notAllowed"`
+}
+
+type Empty struct {
+	XMLName xml.Name `xml:"empty"`
+}
+
+type Text struct {
+	XMLName xml.Name `xml:"text"`
+}
 
 type Data struct {
+	XMLName         xml.Name       `xml:"data"`
 	Type            string         `xml:"type,attr"`
 	DatatypeLibrary string         `xml:"datatypeLibrary,attr"`
 	Param           []Param        `xml:"param"`
 	Except          *NameOrPattern `xml:"except"`
 }
 
-// func (this *Data) unmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-// 	switch start.Name.Local {
-// 	case "param":
-// 		p := &Param{}
-// 		if err := d.DecodeElement(p, &start); err != nil {
-// 			return err
-// 		}
-// 		this.Param = append(this.Param, *p)
-// 	case "except":
-// 		this.Except = &NameOrPattern{}
-// 		return d.DecodeElement(this.Except, &start)
-// 	}
-// 	panic("unknown data " + start.Name.Local)
-// }
-
-// func (this *Data) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-// 	name := start.Name.Local
-// 	if name != "data" {
-// 		panic("wtf")
-// 	}
-// 	for _, a := range start.Attr {
-// 		if a.Name.Local == "type" {
-// 			this.Type = a.Value
-// 		} else if a.Name.Local == "datatypeLibrary" {
-// 			this.DatatypeLibrary = a.Value
-// 		}
-// 	}
-// 	for {
-// 		t, err := d.Token()
-// 		if err != nil {
-// 			if err == io.EOF {
-// 				return nil
-// 			}
-// 			return err
-// 		}
-// 		s, ok := t.(xml.StartElement)
-// 		if !ok {
-// 			continue
-// 		}
-// 		if err := this.unmarshalXML(d, s); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	panic("unreachable")
-// }
-
 type Value struct {
-	DatatypeLibrary string `xml:"datatypeLibrary,attr"`
-	Type            string `xml:"type,attr"`
-	Ns              string `xml:"ns,attr"`
-	Text            string `xml:",chardata"`
+	XMLName         xml.Name `xml:"value"`
+	DatatypeLibrary string   `xml:"datatypeLibrary,attr"`
+	Type            string   `xml:"type,attr"`
+	Ns              string   `xml:"ns,attr"`
+	Text            string   `xml:",chardata"`
+}
+
+type List struct {
+	XMLName xml.Name `xml:"list"`
+	*NameOrPattern
+}
+
+type Attribute struct {
+	XMLName xml.Name `xml:"attribute"`
+	*NameOrPattern
+}
+
+type OneOrMore struct {
+	XMLName xml.Name `xml:"oneOrMore"`
+	*NameOrPattern
 }
 
 type Ref struct {
-	Name string `xml:"name,attr"`
+	XMLName xml.Name `xml:"ref"`
+	Name    string   `xml:"name,attr"`
 }
 
 type Pair struct {
@@ -286,23 +210,43 @@ func (this *Pair) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return d.Skip()
 }
 
+func (this *Pair) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	fmt.Printf("marshaling pair\n")
+	if err := this.Left.marshalXML(e, start); err != nil {
+		return err
+	}
+	if err := this.Right.marshalXML(e, start); err != nil {
+		return err
+	}
+	if err := e.EncodeToken(start.End()); err != nil {
+		return err
+	}
+	return nil
+}
+
 type Param struct {
 	Name string `xml:",attr"`
 	Text string `xml:",chardata"`
 }
 
 type AnyNameClass struct {
-	Except *ExceptNameClass `xml:"except"`
+	XMLName xml.Name         `xml:"anyName"`
+	Except  *ExceptNameClass `xml:"except"`
 }
 
 type NsNameClass struct {
-	Ns     string           `xml:"ns,attr"`
-	Except *ExceptNameClass `xml:"except"`
+	XMLName xml.Name         `xml:"nsName"`
+	Ns      string           `xml:"ns,attr"`
+	Except  *ExceptNameClass `xml:"except"`
 }
 
 type NameNameClass struct {
-	Ns   string `xml:"ns,attr"`
-	Text string `xml:",chardata"`
+	XMLName xml.Name `xml:"name"`
+	Ns      string   `xml:"ns,attr"`
+	Text    string   `xml:",chardata"`
 }
 
 type ExceptNameClass struct {
