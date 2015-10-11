@@ -7,12 +7,21 @@ When this is done testing of the translations can start.
 
 ```
 #element1
-@element1 = foo:(
-    ["@bar":<empty>,#element2] |
-    ["@bar":(->type($string))*,#element3]
+
+@element1 = foo: (
+    [
+        "@bar":<empty>,
+        #element2
+    ] |
+    [
+        "@bar":(->type($string))*,
+        #element3
+    ]
 )
-@element2=baz1:<empty>
-@element3=baz2:<empty>
+
+@element2 = baz1: <empty>
+
+@element3 = baz2: <empty>
 ```
 
 is translated from:
