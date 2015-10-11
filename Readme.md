@@ -17,7 +17,7 @@ I don't really intend to fix these, but you never know.
 
 ### Only handles simplified relaxng grammars.
 
-[http://www.kohsuke.org/relaxng/rng2srng/](rng2srng) seems to be quite effective at converting the full spectrum of what is possible within the relaxng grammar to the simplified grammar.
+http://www.kohsuke.org/relaxng/rng2srng/ seems to be quite effective at converting the full spectrum of what is possible within the relaxng grammar to the simplified grammar.
 
 ```
 java -jar rng2srng.jar full.rng > simplified.rng
