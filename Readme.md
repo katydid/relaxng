@@ -8,10 +8,10 @@ the list is element is not working yet.
 ## Known Issues
 
 There are quite a few known issues:
-  - namespaces are not supported
-  - more datatypes (only string and token are currently supported)
-  - datatypeLibraries: there are none
-  - only simplified grammars are supported
+  - Only simplified grammars are supported.
+  - namespaces are not supported.
+  - datatypes: only string and token are currently supported.
+  - datatypeLibraries are not supported.
 
 I don't really intend to fix these, but you never know.
 
