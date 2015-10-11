@@ -137,8 +137,7 @@ func testOneCase(t *testing.T, spec testCase) {
 func testSimple(t *testing.T, spec testCase) {
 	katydid, err := Translate(spec.SimpleContent)
 	if err != nil {
-		t.Errorf("unexpected error %s for %s", err, spec.SimpleFilename)
-		return
+		t.Fatalf("unexpected error %s for %s", err, spec.SimpleFilename)
 	}
 	for _, xml := range spec.Xmls {
 		err = Validate(katydid, xml.Content)

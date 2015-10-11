@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestSimpleParse(t *testing.T) {
+func TestSimpleParseSpecExample(t *testing.T) {
 	//http://relaxng.org/spec-20011203.html
 	example5p1 := `<?xml version="1.0"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0">
@@ -51,5 +51,59 @@ func TestSimpleParse(t *testing.T) {
 	}
 	if !strings.Contains(s, `<define name="bar1.element">`) {
 		t.Fatalf("expected define bar1")
+	}
+}
+
+func TestSimpleParseChoice(t *testing.T) {
+	choice := `<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+  <start>
+    <ref name="element1"/>
+  </start>
+  <define name="element1">
+    <element>
+    <choice> 
+      <ref name="a"/>
+      <ref name="b"/>
+    </choice>
+    </element>
+  </define>
+</grammar>`
+	g, err := ParseGrammar([]byte(choice))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := g.String()
+	t.Logf(s)
+	if !strings.Contains(s, `choice`) {
+		t.Fatalf("expected choice")
+	}
+	if !strings.Contains(s, `ref name="a"`) {
+		t.Fatalf("expected ref name a in choice")
+	}
+}
+
+func TestSimpleParse94(t *testing.T) {
+	s94 := `<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+  <start>
+    <ref name="element1"/>
+  </start>
+  <define name="element1">
+    <element>
+      <name ns="">foo</name>
+      <attribute>
+        <name ns="">bar</name>
+        <text/>
+      </attribute>
+    </element>
+  </define>
+</grammar>`
+	g, err := ParseGrammar([]byte(s94))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := g.String()
+	t.Logf(s)
+	if !strings.Contains(s, `attribute`) {
+		t.Fatalf("expected attribute")
 	}
 }
