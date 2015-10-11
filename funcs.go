@@ -19,20 +19,25 @@ import (
 	"strings"
 )
 
-func Tokenize(s funcs.String) funcs.String {
-	return &tokenize{s}
+func Token(s funcs.String) funcs.String {
+	return &token{s}
 }
 
 //http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
-type tokenize struct {
+type token struct {
 	S funcs.String
 }
 
-func (this *tokenize) Eval() (string, error) {
+func (this *token) Eval() (string, error) {
 	s, err := this.S.Eval()
 	if err != nil {
 		return "", err
 	}
+	ss := tokenize(s)
+	return strings.Join(ss, " "), nil
+}
+
+func tokenize(s string) []string {
 	ss := []string{}
 	s1 := strings.Split(s, " ")
 	for _, ss1 := range s1 {
@@ -50,9 +55,9 @@ func (this *tokenize) Eval() (string, error) {
 			}
 		}
 	}
-	return strings.Join(ss, " "), nil
+	return ss
 }
 
 func init() {
-	funcs.Register("token", new(tokenize))
+	funcs.Register("token", new(token))
 }

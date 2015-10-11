@@ -15,6 +15,7 @@
 package relaxng
 
 import (
+	"fmt"
 	exprparser "github.com/katydid/katydid/expr/parser"
 	"github.com/katydid/katydid/funcs"
 	"github.com/katydid/katydid/relapse/ast"
@@ -59,10 +60,7 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return newLeaf(funcs.Sprint(funcs.And(funcs.TypeString(), funcs.Not(expr))))
 	}
 	if p.Value != nil {
-		if p.Value.IsString() {
-			return newLeaf(funcs.Sprint(funcs.StringEq(funcs.StringConst(p.Value.Text), funcs.StringVar())))
-		}
-		return newLeaf(funcs.Sprint(funcs.StringEq(funcs.StringConst(p.Value.Text), Tokenize(funcs.StringVar()))))
+		return newLeaf(funcs.Sprint(translateLeaf(p, funcs.StringVar())))
 	}
 	if p.List != nil {
 		panic("todo: list")
@@ -103,13 +101,41 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 			relapse.NewConcat(right, left),
 		)
 	}
-	panic("unset pattern")
+	panic(fmt.Sprintf("unreachable pattern %v", p))
 }
 
 func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
-	panic("todo nameclass")
+	if n.Choice != nil {
+		return relapse.NewNameChoice(
+			translateNameClass(n.Choice.Left, attr),
+			translateNameClass(n.Choice.Right, attr),
+		)
+	}
+	if n.AnyName != nil {
+		if n.AnyName.Except == nil {
+			return relapse.NewAnyName()
+		}
+		except := translateNameClass(n.AnyName.Except, attr)
+		return relapse.NewAnyNameExcept(except)
+	}
+	if n.NsName != nil {
+		panic("nsName is not supported")
+	}
+	if n.Name != nil {
+		return relapse.NewName(n.Name.Text)
+	}
+	panic(fmt.Sprintf("unreachable nameclass %v", n))
 }
 
 func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
-	panic("todo translate Leaf")
+	if p.Value != nil {
+		if p.Value.IsString() {
+			return funcs.StringEq(funcs.StringConst(p.Value.Text), v)
+		}
+		return funcs.StringEq(funcs.StringConst(p.Value.Text), Token(v))
+	}
+	if p.Choice != nil {
+		return funcs.Or(translateLeaf(p.Choice.Left, v), translateLeaf(p.Choice.Right, v))
+	}
+	panic(fmt.Sprintf("unsupported leaf %v", p))
 }

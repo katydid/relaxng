@@ -15,6 +15,7 @@
 package relaxng
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"reflect"
@@ -112,6 +113,17 @@ func (this *NameOrPattern) IsNameClass() bool {
 	return false
 }
 
+func (this *NameOrPattern) String() string {
+	buf := bytes.NewBuffer(nil)
+	enc := xml.NewEncoder(buf)
+	err := this.marshalXML(enc, xml.StartElement{})
+	if err != nil {
+		panic(err)
+	}
+	enc.Flush()
+	return string(buf.Bytes())
+}
+
 func (this *NameOrPattern) unmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	t := reflect.TypeOf(this).Elem()
 	numFields := t.NumField()
@@ -199,6 +211,8 @@ func (this *Value) IsString() bool {
 	return this.Type == "string"
 }
 
+//http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-9.html
+//http://books.xmlschemata.org/relaxng/ch17-77136.html
 type List struct {
 	XMLName xml.Name `xml:"list"`
 	*NameOrPattern
@@ -290,22 +304,20 @@ type Param struct {
 }
 
 type AnyNameClass struct {
-	XMLName xml.Name         `xml:"anyName"`
-	Except  *ExceptNameClass `xml:"except"`
+	XMLName xml.Name       `xml:"anyName"`
+	Except  *NameOrPattern `xml:"except"`
 }
 
+//  Ns is not supported
 type NsNameClass struct {
-	XMLName xml.Name         `xml:"nsName"`
-	Ns      string           `xml:"ns,attr"`
-	Except  *ExceptNameClass `xml:"except"`
+	XMLName xml.Name       `xml:"nsName"`
+	Ns      string         `xml:"ns,attr"`
+	Except  *NameOrPattern `xml:"except"`
 }
 
+//  Ns is not supported
 type NameNameClass struct {
 	XMLName xml.Name `xml:"name"`
 	Ns      string   `xml:"ns,attr"`
 	Text    string   `xml:",chardata"`
-}
-
-type ExceptNameClass struct {
-	Text string `xml:",chardata"`
 }
