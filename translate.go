@@ -16,6 +16,7 @@ package relaxng
 
 import (
 	"fmt"
+	"github.com/katydid/katydid/expr/ast"
 	exprparser "github.com/katydid/katydid/expr/parser"
 	"github.com/katydid/katydid/funcs"
 	"github.com/katydid/katydid/relapse/ast"
@@ -32,13 +33,15 @@ func translate(g *Grammar) (*relapse.Grammar, error) {
 	return relapse.NewGrammar(refs), nil
 }
 
+//TODO rather call a function available in the katydid relapse library
 func newLeaf(exprStr string) *relapse.Pattern {
-	expr, err := exprparser.NewParser().ParseExpr(exprStr)
+	e, err := exprparser.NewParser().ParseExpr(exprStr)
 	if err != nil {
 		panic(err)
 	}
 	return &relapse.Pattern{LeafNode: &relapse.LeafNode{
-		Expr: expr,
+		RightArrow: &expr.Keyword{Value: "->"},
+		Expr:       e,
 	}}
 }
 
@@ -63,7 +66,8 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return newLeaf(funcs.Sprint(translateLeaf(p, funcs.StringVar())))
 	}
 	if p.List != nil {
-		panic("todo: list")
+		regexStr := listToRegex(p.List.NameOrPattern)
+		return newLeaf(funcs.Sprint(funcs.Regex(funcs.StringConst(regexStr), funcs.StringVar())))
 	}
 	if p.Attribute != nil {
 		nameExpr := translateNameClass(p.Attribute.Left, true)
@@ -138,4 +142,33 @@ func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
 		return funcs.Or(translateLeaf(p.Choice.Left, v), translateLeaf(p.Choice.Right, v))
 	}
 	panic(fmt.Sprintf("unsupported leaf %v", p))
+}
+
+func listToRegex(p *NameOrPattern) string {
+	if p.Empty != nil {
+		return ""
+	}
+	if p.Data != nil {
+		if p.Data.Except == nil {
+			return `(\S)*`
+		}
+	}
+	if p.Value != nil {
+		return p.Value.Text
+	}
+	if p.OneOrMore != nil {
+		s := listToRegex(p.OneOrMore.NameOrPattern)
+		return "(" + s + ")+"
+	}
+	if p.Choice != nil {
+		l := listToRegex(p.Choice.Left)
+		r := listToRegex(p.Choice.Right)
+		return "(" + l + "|" + r + ")"
+	}
+	if p.Group != nil {
+		l := listToRegex(p.Group.Left)
+		r := listToRegex(p.Group.Right)
+		return l + `\s` + r
+	}
+	panic(fmt.Sprintf("unsupported list %v", p))
 }

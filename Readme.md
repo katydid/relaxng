@@ -3,8 +3,6 @@
 Katydid still requires some work to fully support XML.
 When this is done testing of the translations can start.
 
-the list is element is not working yet.
-
 ## Known Issues
 
 There are quite a few known issues:
