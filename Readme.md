@@ -3,7 +3,108 @@
 Katydid still requires some work to fully support XML.
 When this is done testing of the translations can start.
 
-## Example
+## Example 1
+
+The Simplified RelaxNG Grammar
+
+```
+<grammar>
+    <start>
+        <ref name="element1"></ref>
+    </start>
+    <define name="element1">
+        <element>
+            <name>foo</name>
+            <empty></empty>
+        </element>
+    </define>
+</grammar>
+```
+
+is translated to this Katydid Grammar
+
+```
+#element1
+
+@element1 = foo: <empty>
+```
+
+
+## Example 2
+
+The Simplified RelaxNG Grammar
+
+```
+<grammar>
+    <start>
+        <ref name="element1"></ref>
+    </start>
+    <define name="element1">
+        <element>
+            <name>foo</name>
+            <attribute>
+                <name>bar</name>
+                <text></text>
+            </attribute>
+        </element>
+    </define>
+</grammar>
+```
+
+is translated to this Katydid Grammar
+
+```
+#element1
+
+@element1 = foo: "@bar": (->type($string))*
+```
+
+## Example 3
+
+The Simplified RelaxNG Grammar
+
+```
+<grammar>
+    <start>
+        <ref name="element1"></ref>
+    </start>
+    <define name="element1">
+        <element>
+            <name>foo</name>
+            <choice>
+                <group>
+                    <attribute>
+                        <name>bar</name>
+                        <empty></empty>
+                    </attribute>
+                    <ref name="element2"></ref>
+                </group>
+                <group>
+                    <attribute>
+                        <name>bar</name>
+                        <text></text>
+                    </attribute>
+                    <ref name="element3"></ref>
+                </group>
+            </choice>
+        </element>
+    </define>
+    <define name="element2">
+        <element>
+            <name>baz1</name>
+            <empty></empty>
+        </element>
+    </define>
+    <define name="element3">
+        <element>
+            <name>baz2</name>
+            <empty></empty>
+        </element>
+    </define>
+</grammar>
+```
+
+is translated to this Katydid Grammar
 
 ```
 #element1
@@ -22,49 +123,6 @@ When this is done testing of the translations can start.
 @element2 = baz1: <empty>
 
 @element3 = baz2: <empty>
-```
-
-is translated from:
-
-```
-<Grammar>
-    <start>
-        <ref name="element1"></ref>
-    </start>
-    <define name="element1">
-        <element>
-            <name ns="">foo</name>
-            <choice>
-                <group>
-                    <attribute>
-                        <name ns="">bar</name>
-                        <empty></empty>
-                    </attribute>
-                    <ref name="element2"></ref>
-                </group>
-                <group>
-                    <attribute>
-                        <name ns="">bar</name>
-                        <text></text>
-                    </attribute>
-                    <ref name="element3"></ref>
-                </group>
-            </choice>
-        </element>
-    </define>
-    <define name="element2">
-        <element>
-            <name ns="">baz1</name>
-            <empty></empty>
-        </element>
-    </define>
-    <define name="element3">
-        <element>
-            <name ns="">baz2</name>
-            <empty></empty>
-        </element>
-    </define>
-</Grammar>
 ```
 
 ## Known Issues

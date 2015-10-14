@@ -63,8 +63,9 @@ http://relaxng.org/spec-20011203.html
 	exceptNameClass	::= <except> nameClass </except>
 */
 type Grammar struct {
-	Start  *NameOrPattern `xml:"start"`
-	Define []Define       `xml:"define"`
+	XMLName xml.Name       `xml:"grammar"`
+	Start   *NameOrPattern `xml:"start"`
+	Define  []Define       `xml:"define"`
 }
 
 type Define struct {
