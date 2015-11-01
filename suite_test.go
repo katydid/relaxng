@@ -171,6 +171,9 @@ func testSimple(t *testing.T, spec testCase, debugParser bool) {
 	debugStr += fmt.Sprintf("To:\n%s\n", katydid.String())
 	preInputDebug := debugStr
 	for _, xml := range spec.Xmls {
+		if debugParser {
+			fmt.Printf("--- PARSING %s\n", xml.Filename)
+		}
 		debugStr = preInputDebug + fmt.Sprintf("Input:\n%s\n", string(xml.Content))
 		if debugParser {
 			err = debugValidate(katydid, xml.Content)
@@ -210,6 +213,7 @@ var namespaces = map[string]bool{
 	"133": true,
 	"142": true,
 	"176": true,
+	"215": true,
 	"217": true,
 	"218": true,
 	"219": true,
@@ -238,24 +242,24 @@ var namespaces = map[string]bool{
 	"354": true,
 }
 
+var datatypeLibrary = map[string]bool{
+	"261": true,
+}
+
 var fixable = map[string]bool{
-	"147": true, //not valid
-	"151": true, //not valid
-	"194": true, //not valid
-	"195": true, //not valid
-	"215": true, //not valid
-	"232": true, //not valid
-	"234": true, //not valid
-	"236": true, //not valid
+	"147": true, //interleave interleave(interleave(1,2), 3) = [[1,2]|[2,1],3]|[3,[1,2]|[2,1]] does not include 1,3,2
+	"151": true, //interleave
+	"194": true, //interleave
+	"195": true, //interleave
+	"232": true, //attributes are not interleaved
+	"234": true, //element is expected before attributes
 	"237": true, //not valid - list
 	"238": true, //not valid - list
-	"251": true, //not valid
-	"261": true, //not valid
-	"265": true, //not valid
-	"268": true, //not valid
-	"269": true, //not valid
-	"284": true, //expected error
-	"372": true, //not valid
+	"251": true, //interleave
+	"265": true, //<foo/> seems to want to be valid against a string type, is a string type also optionally empty?
+	"268": true, //same as 265
+	"269": true, //same as 265 except for token also being optionally empty
+	"284": true, //expected error - list and namespace
 }
 
 func testNumber(filename string) string {
@@ -277,6 +281,10 @@ func TestSimpleSuite(t *testing.T) {
 			//t.Logf("%s [SKIP] namespaces not supported", num)
 			continue
 		}
+		if datatypeLibrary[num] {
+			//t.Logf("%s [SKIP] datatypeLibrary not supported", num)
+			continue
+		}
 		if fixable[num] {
 			t.Errorf("%s [FAIL]", num)
 			continue
@@ -286,7 +294,7 @@ func TestSimpleSuite(t *testing.T) {
 		passed++
 	}
 	total := passed + len(fixable)
-	t.Logf("passed: %d/%d, failed: %d/%d, namespace tests skipped: %d, incorrect grammars skipped: %d", passed, total, len(fixable), total, len(namespaces), incorrect)
+	t.Logf("passed: %d/%d, failed: %d/%d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, incorrect grammars skipped: %d", passed, total, len(fixable), total, len(namespaces), len(datatypeLibrary), incorrect)
 }
 
 func testDebug(t *testing.T, num string) {
@@ -300,5 +308,5 @@ func testDebug(t *testing.T, num string) {
 }
 
 // func TestDebug(t *testing.T) {
-// 	testDebug(t, "120")
+// 	testDebug(t, "372")
 // }

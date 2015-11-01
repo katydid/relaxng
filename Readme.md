@@ -7,9 +7,10 @@ Converts Simplified RelaxNG Grammars to the Katydid Relapse Grammar.
 [![Build Status](https://travis-ci.org/katydid/relaxng.svg?branch=master)](https://travis-ci.org/katydid/relaxng)
 
 ```
-passed: 85
-failed: 31
-namespace tests skipped: 44
+passed: 99
+failed: 13
+namespace tests skipped: 47
+datatypeLibrary tests skipped: 1
 incorrect grammars skipped: 213
 ```
 

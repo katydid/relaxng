@@ -37,12 +37,18 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return relapse.NewEmptySet()
 	}
 	if p.Empty != nil {
+		if attr {
+			return combinator.Value(funcs.StringEq(Token(funcs.StringVar()), funcs.StringConst("")))
+		}
 		return relapse.NewEmpty()
 	}
 	if p.Text != nil {
 		return relapse.NewZeroOrMore(combinator.Value(funcs.TypeString(funcs.StringVar())))
 	}
 	if p.Data != nil {
+		if len(p.Data.DatatypeLibrary) > 0 {
+			panic("data datatypeLibrary not supported")
+		}
 		if p.Data.Except == nil {
 			return combinator.Value(funcs.TypeString(funcs.StringVar()))
 		}
