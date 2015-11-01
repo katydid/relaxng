@@ -1,6 +1,8 @@
 before_install:
   - ./install-dependencies.sh
 
+install: true
+
 script:
   - go test
 
