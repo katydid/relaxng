@@ -16,6 +16,10 @@ package relaxng
 
 import (
 	"fmt"
+	"github.com/katydid/katydid/relapse/ast"
+	"github.com/katydid/katydid/relapse/interp"
+	sdebug "github.com/katydid/katydid/serialize/debug"
+	"github.com/katydid/katydid/serialize/xml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -135,7 +139,19 @@ func testOneCase(t *testing.T, spec testCase) {
 	}
 }
 
-func testSimple(t *testing.T, spec testCase) {
+func debugValidate(katydid *relapse.Grammar, xmlContent []byte) error {
+	p := xml.NewXMLParser()
+	if err := p.Init(xmlContent); err != nil {
+		return err
+	}
+	d := sdebug.NewLogger(p, sdebug.NewLineLogger())
+	if !interp.Interpret(katydid, d) {
+		return fmt.Errorf("not valid")
+	}
+	return nil
+}
+
+func testSimple(t *testing.T, spec testCase, debugParser bool) {
 	debugStr := fmt.Sprintf("Original:\n%s\n", string(spec.SimpleContent))
 	defer func() {
 		r := recover()
@@ -156,7 +172,11 @@ func testSimple(t *testing.T, spec testCase) {
 	preInputDebug := debugStr
 	for _, xml := range spec.Xmls {
 		debugStr = preInputDebug + fmt.Sprintf("Input:\n%s\n", string(xml.Content))
-		err = Validate(katydid, xml.Content)
+		if debugParser {
+			err = debugValidate(katydid, xml.Content)
+		} else {
+			err = Validate(katydid, xml.Content)
+		}
 		if xml.expectError() {
 			if err == nil {
 				t.Fatalf("%sexpected error for %s", debugStr, xml.Filename)
@@ -219,34 +239,22 @@ var namespaces = map[string]bool{
 }
 
 var fixable = map[string]bool{
-	"120": true, //value not a string
-	"139": true, //value not a string
-	"146": true, //value not a string
-	"147": true, //value not a string
+	"147": true, //not valid
 	"151": true, //not valid
-	"190": true, //value not a string
-	"191": true, //value not a string
-	"194": true, //value not a string
-	"195": true, //value not a string
+	"194": true, //not valid
+	"195": true, //not valid
 	"215": true, //not valid
-	"225": true, //value not a string
-	"226": true, //value not a string
-	"228": true, //value not a string
 	"232": true, //not valid
 	"234": true, //not valid
 	"236": true, //not valid
 	"237": true, //not valid - list
 	"238": true, //not valid - list
-	"244": true, //value not a string
-	"250": true, //value not a string
-	"251": true, //value not a string
+	"251": true, //not valid
 	"261": true, //not valid
 	"265": true, //not valid
 	"268": true, //not valid
 	"269": true, //not valid
 	"284": true, //expected error
-	"368": true, //value not a string
-	"369": true, //value not a string
 	"372": true, //not valid
 }
 
@@ -266,17 +274,31 @@ func TestSimpleSuite(t *testing.T) {
 			continue
 		}
 		if namespaces[num] {
-			t.Logf("%s [SKIP] namespaces not supported", num)
+			//t.Logf("%s [SKIP] namespaces not supported", num)
 			continue
 		}
 		if fixable[num] {
 			t.Errorf("%s [FAIL]", num)
 			continue
 		}
-		testSimple(t, spec)
-		t.Logf("%s [PASS]", num)
+		testSimple(t, spec, false)
+		//t.Logf("%s [PASS]", num)
 		passed++
 	}
 	total := passed + len(fixable)
 	t.Logf("passed: %d/%d, failed: %d/%d, namespace tests skipped: %d, incorrect grammars skipped: %d", passed, total, len(fixable), total, len(namespaces), incorrect)
 }
+
+func testDebug(t *testing.T, num string) {
+	suite := scanFiles()
+	for _, spec := range suite {
+		if num != testNumber(spec.Filename) {
+			continue
+		}
+		testSimple(t, spec, true)
+	}
+}
+
+// func TestDebug(t *testing.T) {
+// 	testDebug(t, "120")
+// }
