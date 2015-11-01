@@ -2,8 +2,10 @@
 
 Converts Simplified RelaxNG Grammars to the Katydid Relapse Grammar.
 
-Test Suite Status
+###Test Suite Status
+
 [![Build Status](https://travis-ci.org/katydid/relaxng.svg?branch=master)](https://travis-ci.org/katydid/relaxng)
+
 ```
 passed: 85
 failed: 31

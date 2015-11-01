@@ -19,7 +19,6 @@ import (
 	"github.com/katydid/katydid/funcs"
 	"github.com/katydid/katydid/relapse/ast"
 	"github.com/katydid/katydid/relapse/combinator"
-	"strings"
 )
 
 func translate(g *Grammar) (*relapse.Grammar, error) {
@@ -121,8 +120,8 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 		panic("nsName is not supported")
 	}
 	if n.Name != nil {
-		if n.Name.Ns != nil && len(strings.TrimSpace(*n.Name.Ns)) > 0 {
-			panic(fmt.Sprintf("name ns <%v> is not supported", *n.Name.Ns))
+		if len(n.Name.Ns) > 0 {
+			panic(fmt.Sprintf("name ns <%v> is not supported", n.Name.Ns))
 		}
 		if attr {
 			return relapse.NewName("@" + n.Name.Text)
@@ -133,10 +132,10 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 }
 
 func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
-	if p.Value.Ns != nil && len(*p.Value.Ns) > 0 {
-		panic("value ns not supported")
-	}
 	if p.Value != nil {
+		if len(p.Value.Ns) > 0 {
+			panic("value ns not supported")
+		}
 		if p.Value.IsString() {
 			return funcs.StringEq(funcs.StringConst(p.Value.Text), v)
 		}

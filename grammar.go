@@ -201,7 +201,7 @@ type Value struct {
 	XMLName         xml.Name `xml:"value"`
 	DatatypeLibrary string   `xml:"datatypeLibrary,attr"`
 	Type            string   `xml:"type,attr"`
-	Ns              *string  `xml:"ns,attr"`
+	Ns              string   `xml:"ns,attr"`
 	Text            string   `xml:",chardata"`
 }
 
@@ -312,13 +312,13 @@ type AnyNameClass struct {
 //  Ns is not supported
 type NsNameClass struct {
 	XMLName xml.Name       `xml:"nsName"`
-	Ns      *string        `xml:"ns,attr"`
+	Ns      string         `xml:"ns,attr"`
 	Except  *NameOrPattern `xml:"except"`
 }
 
 //  Ns is not supported
 type NameNameClass struct {
 	XMLName xml.Name `xml:"name"`
-	Ns      *string  `xml:"ns,attr"`
+	Ns      string   `xml:"ns,attr"`
 	Text    string   `xml:",chardata"`
 }

@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"testing"
@@ -135,35 +136,35 @@ func testOneCase(t *testing.T, spec testCase) {
 }
 
 func testSimple(t *testing.T, spec testCase) {
-	debug := fmt.Sprintf("Original:\n%s\n", string(spec.SimpleContent))
+	debugStr := fmt.Sprintf("Original:\n%s\n", string(spec.SimpleContent))
 	defer func() {
 		r := recover()
 		if r != nil {
-			t.Fatalf("%srecover for %s: %#v", debug, spec.SimpleFilename, r)
+			t.Fatalf("%srecover for %s: %v: %s", debugStr, spec.SimpleFilename, r, debug.Stack())
 		}
 	}()
 	g, err := ParseGrammar(spec.SimpleContent)
 	if err != nil {
-		t.Fatalf("%sunparsable %s", debug, spec.SimpleFilename)
+		t.Fatalf("%sunparsable %s", debugStr, spec.SimpleFilename)
 	}
-	debug += fmt.Sprintf("Parsed:\n%s\n", g.String())
+	debugStr += fmt.Sprintf("Parsed:\n%s\n", g.String())
 	katydid, err := Translate(spec.SimpleContent)
 	if err != nil {
-		t.Fatalf("%sunexpected error <%s> for %s", debug, err, spec.SimpleFilename)
+		t.Fatalf("%sunexpected error <%s> for %s", debugStr, err, spec.SimpleFilename)
 	}
-	debug += fmt.Sprintf("To:\n%s\n", katydid.String())
-	preInputDebug := debug
+	debugStr += fmt.Sprintf("To:\n%s\n", katydid.String())
+	preInputDebug := debugStr
 	for _, xml := range spec.Xmls {
-		debug = preInputDebug + fmt.Sprintf("Input:\n%s\n", string(xml.Content))
+		debugStr = preInputDebug + fmt.Sprintf("Input:\n%s\n", string(xml.Content))
 		err = Validate(katydid, xml.Content)
 		if xml.expectError() {
 			if err == nil {
-				t.Fatalf("%sexpected error for %s", debug, xml.Filename)
+				t.Fatalf("%sexpected error for %s", debugStr, xml.Filename)
 			}
 			return
 		}
 		if err != nil {
-			t.Fatalf("%sgot unexpected error <%s> for %s", debug, err, xml.Filename)
+			t.Fatalf("%sgot unexpected error <%s> for %s", debugStr, err, xml.Filename)
 		}
 	}
 }
@@ -187,6 +188,7 @@ var namespaces = map[string]bool{
 	"131": true,
 	"132": true,
 	"133": true,
+	"142": true,
 	"176": true,
 	"217": true,
 	"218": true,
@@ -202,6 +204,7 @@ var namespaces = map[string]bool{
 	"259": true,
 	"262": true,
 	"263": true,
+	"264": true,
 	"266": true,
 	"267": true,
 	"270": true,
@@ -216,37 +219,35 @@ var namespaces = map[string]bool{
 }
 
 var fixable = map[string]bool{
-	"120": true,
-	"139": true,
-	"142": true,
-	"146": true,
-	"147": true,
-	"151": true,
-	"190": true,
-	"191": true,
-	"194": true,
-	"195": true,
-	"215": true,
-	"225": true,
-	"226": true,
-	"228": true,
-	"232": true,
-	"234": true,
-	"236": true,
-	"237": true,
-	"238": true,
-	"244": true,
-	"250": true,
-	"251": true,
-	"261": true,
-	"264": true,
-	"265": true,
-	"268": true,
-	"269": true,
-	"284": true,
-	"368": true,
-	"369": true,
-	"372": true,
+	"120": true, //value not a string
+	"139": true, //value not a string
+	"146": true, //value not a string
+	"147": true, //value not a string
+	"151": true, //not valid
+	"190": true, //value not a string
+	"191": true, //value not a string
+	"194": true, //value not a string
+	"195": true, //value not a string
+	"215": true, //not valid
+	"225": true, //value not a string
+	"226": true, //value not a string
+	"228": true, //value not a string
+	"232": true, //not valid
+	"234": true, //not valid
+	"236": true, //not valid
+	"237": true, //not valid - list
+	"238": true, //not valid - list
+	"244": true, //value not a string
+	"250": true, //value not a string
+	"251": true, //value not a string
+	"261": true, //not valid
+	"265": true, //not valid
+	"268": true, //not valid
+	"269": true, //not valid
+	"284": true, //expected error
+	"368": true, //value not a string
+	"369": true, //value not a string
+	"372": true, //not valid
 }
 
 func testNumber(filename string) string {
