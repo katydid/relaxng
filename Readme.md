@@ -7,13 +7,17 @@ Converts Simplified RelaxNG Grammars to the Katydid Relapse Grammar.
 [![Build Status](https://travis-ci.org/katydid/relaxng.svg?branch=master)](https://travis-ci.org/katydid/relaxng)
 
 ```
-passed: 100
-failed: 10
-namespace tests skipped: 47
+passed: 99
+failed: 7
+namespace tests skipped: 51
 datatypeLibrary tests skipped: 1
 processing instruction tests skipped: 2
 incorrect grammars skipped: 213
 ```
+
+Interleave is currently the main cause of problems.
+
+Namespace tests also need to be reinvestigated.
 
 ## Example 1
 
