@@ -52,11 +52,22 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		if p.Data.Except == nil {
 			return relapse.NewOr(combinator.Value(funcs.TypeString(funcs.StringVar())), relapse.NewEmpty())
 		}
-		expr := translateLeaf(p.Data.Except, funcs.StringVar())
-		return combinator.Value(funcs.And(funcs.TypeString(funcs.StringVar()), funcs.Not(expr)))
+		expr, nullable := translateLeaf(p.Data.Except, funcs.StringVar())
+		v := combinator.Value(funcs.And(
+			funcs.TypeString(funcs.StringVar()),
+			funcs.Not(expr),
+		))
+		if nullable {
+			return relapse.NewAnd(v, relapse.NewNot(relapse.NewEmpty()))
+		}
+		return relapse.NewOr(v, relapse.NewEmpty())
 	}
 	if p.Value != nil {
-		return combinator.Value(translateLeaf(p, funcs.StringVar()))
+		v, nullable := translateLeaf(p, funcs.StringVar())
+		if !nullable {
+			return combinator.Value(v)
+		}
+		return relapse.NewOr(combinator.Value(v), relapse.NewEmpty())
 	}
 	if p.List != nil {
 		regexStr, nullable := listToRegex(p.List.NameOrPattern)
@@ -180,18 +191,20 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 	panic(fmt.Sprintf("unreachable nameclass %v", n))
 }
 
-func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
+func translateLeaf(p *NameOrPattern, v funcs.String) (funcs.Bool, bool) {
 	if p.Value != nil {
 		if len(p.Value.Ns) > 0 && p.Value.Ns != "TODO" {
 			panic("value ns not supported")
 		}
 		if p.Value.IsString() {
-			return funcs.StringEq(funcs.StringConst(p.Value.Text), v)
+			return funcs.StringEq(funcs.StringConst(p.Value.Text), v), len(p.Value.Text) == 0
 		}
-		return funcs.StringEq(funcs.StringConst(p.Value.Text), Token(v))
+		return funcs.StringEq(funcs.StringConst(p.Value.Text), Token(v)), len(p.Value.Text) == 0
 	}
 	if p.Choice != nil {
-		return funcs.Or(translateLeaf(p.Choice.Left, v), translateLeaf(p.Choice.Right, v))
+		l, nl := translateLeaf(p.Choice.Left, v)
+		r, nr := translateLeaf(p.Choice.Right, v)
+		return funcs.Or(l, r), nl || nr
 	}
 	panic(fmt.Sprintf("unsupported leaf %v", p))
 }
@@ -206,7 +219,7 @@ func listToRegex(p *NameOrPattern) (string, bool) {
 		}
 	}
 	if p.Value != nil {
-		if len(p.Value.Ns) > 0 {
+		if len(p.Value.Ns) > 0 && p.Value.Ns != "TODO" {
 			panic("list value ns not supported")
 		}
 		return p.Value.Text, len(p.Value.Text) == 0

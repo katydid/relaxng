@@ -198,8 +198,6 @@ var namespaces = map[string]bool{
 	"128": true,
 	"131": true,
 	"132": true,
-	"138": true,
-	"142": true,
 	"215": true,
 	"217": true,
 	"218": true,
@@ -290,5 +288,5 @@ func testDebug(t *testing.T, num string) {
 }
 
 // func TestDebug(t *testing.T) {
-// 	testDebug(t, "237")
+// 	testDebug(t, "267")
 // }
