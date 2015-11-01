@@ -16,10 +16,10 @@ package relaxng
 
 import (
 	"fmt"
-	"github.com/katydid/katydid/expr/ast"
-	exprparser "github.com/katydid/katydid/expr/parser"
 	"github.com/katydid/katydid/funcs"
 	"github.com/katydid/katydid/relapse/ast"
+	"github.com/katydid/katydid/relapse/combinator"
+	"strings"
 )
 
 func translate(g *Grammar) (*relapse.Grammar, error) {
@@ -33,18 +33,6 @@ func translate(g *Grammar) (*relapse.Grammar, error) {
 	return relapse.NewGrammar(refs), nil
 }
 
-//TODO rather call a function available in the katydid relapse library
-func newLeaf(exprStr string) *relapse.Pattern {
-	e, err := exprparser.NewParser().ParseExpr(exprStr)
-	if err != nil {
-		panic(err)
-	}
-	return &relapse.Pattern{LeafNode: &relapse.LeafNode{
-		RightArrow: &expr.Keyword{Value: "->"},
-		Expr:       e,
-	}}
-}
-
 func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 	if p.NotAllowed != nil {
 		return relapse.NewEmptySet()
@@ -53,21 +41,21 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return relapse.NewEmpty()
 	}
 	if p.Text != nil {
-		return relapse.NewZeroOrMore(newLeaf(funcs.Sprint(funcs.TypeString())))
+		return relapse.NewZeroOrMore(combinator.Value(funcs.TypeString(funcs.StringVar())))
 	}
 	if p.Data != nil {
 		if p.Data.Except == nil {
-			return newLeaf(funcs.Sprint(funcs.TypeString()))
+			return combinator.Value(funcs.TypeString(funcs.StringVar()))
 		}
 		expr := translateLeaf(p.Data.Except, funcs.StringVar())
-		return newLeaf(funcs.Sprint(funcs.And(funcs.TypeString(), funcs.Not(expr))))
+		return combinator.Value(funcs.And(funcs.TypeString(funcs.StringVar()), funcs.Not(expr)))
 	}
 	if p.Value != nil {
-		return newLeaf(funcs.Sprint(translateLeaf(p, funcs.StringVar())))
+		return combinator.Value(translateLeaf(p, funcs.StringVar()))
 	}
 	if p.List != nil {
 		regexStr := listToRegex(p.List.NameOrPattern)
-		return newLeaf(funcs.Sprint(funcs.Regex(funcs.StringConst(regexStr), Token(funcs.StringVar()))))
+		return combinator.Value(funcs.Regex(funcs.StringConst(regexStr), Token(funcs.StringVar())))
 	}
 	if p.Attribute != nil {
 		nameExpr := translateNameClass(p.Attribute.Left, true)
@@ -123,16 +111,19 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 		return relapse.NewAnyNameExcept(except)
 	}
 	if n.NsName != nil {
-		if len(n.NsName.Ns) == 0 {
-			if n.NsName.Except != nil {
-				return relapse.NewAnyNameExcept(translateNameClass(n.NsName.Except, attr))
-			} else {
-				return relapse.NewAnyName()
-			}
-		}
+		// if len(n.NsName.Ns) == 0 {
+		// 	if n.NsName.Except != nil {
+		// 		return relapse.NewAnyNameExcept(translateNameClass(n.NsName.Except, attr))
+		// 	} else {
+		// 		return relapse.NewAnyName()
+		// 	}
+		// }
 		panic("nsName is not supported")
 	}
 	if n.Name != nil {
+		if n.Name.Ns != nil && len(strings.TrimSpace(*n.Name.Ns)) > 0 {
+			panic(fmt.Sprintf("name ns <%v> is not supported", *n.Name.Ns))
+		}
 		if attr {
 			return relapse.NewName("@" + n.Name.Text)
 		}
@@ -142,6 +133,9 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 }
 
 func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
+	if p.Value.Ns != nil && len(*p.Value.Ns) > 0 {
+		panic("value ns not supported")
+	}
 	if p.Value != nil {
 		if p.Value.IsString() {
 			return funcs.StringEq(funcs.StringConst(p.Value.Text), v)

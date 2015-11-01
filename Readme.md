@@ -1,7 +1,14 @@
 #Converts RelaxNG to Katydid
 
-Katydid still requires some work to fully support XML.
-When this is done testing of the translations can start.
+Converts Simplified RelaxNG Grammars to the Katydid Relapse Grammar.
+
+Test Suite Status
+```
+passed: 85
+failed: 31
+namespace tests skipped: 44
+incorrect grammars skipped: 213
+```
 
 ## Example 1
 

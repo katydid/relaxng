@@ -15,7 +15,10 @@
 package relaxng
 
 import (
+	"errors"
 	"github.com/katydid/katydid/relapse/ast"
+	"github.com/katydid/katydid/relapse/interp"
+	"github.com/katydid/katydid/serialize/xml"
 )
 
 func Translate(relax []byte) (*relapse.Grammar, error) {
@@ -27,5 +30,12 @@ func Translate(relax []byte) (*relapse.Grammar, error) {
 }
 
 func Validate(katydid *relapse.Grammar, xmlContent []byte) error {
+	p := xml.NewXMLParser()
+	if err := p.Init(xmlContent); err != nil {
+		return err
+	}
+	if !interp.Interpret(katydid, p) {
+		return errors.New("not valid")
+	}
 	return nil
 }

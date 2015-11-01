@@ -135,43 +135,147 @@ func testOneCase(t *testing.T, spec testCase) {
 }
 
 func testSimple(t *testing.T, spec testCase) {
+	debug := fmt.Sprintf("Original:\n%s\n", string(spec.SimpleContent))
 	defer func() {
 		r := recover()
 		if r != nil {
-			t.Errorf("recover for %s: %#v", spec.SimpleFilename, r)
+			t.Fatalf("%srecover for %s: %#v", debug, spec.SimpleFilename, r)
 		}
 	}()
 	g, err := ParseGrammar(spec.SimpleContent)
 	if err != nil {
-		t.Fatalf("unparsable %s", spec.SimpleFilename)
+		t.Fatalf("%sunparsable %s", debug, spec.SimpleFilename)
 	}
+	debug += fmt.Sprintf("Parsed:\n%s\n", g.String())
 	katydid, err := Translate(spec.SimpleContent)
 	if err != nil {
-		t.Fatalf("unexpected error %s for %s", err, spec.SimpleFilename)
+		t.Fatalf("%sunexpected error <%s> for %s", debug, err, spec.SimpleFilename)
 	}
-	t.Logf("Translated From:\n%s", g.String())
-	t.Logf("To:\n%s", katydid.String())
+	debug += fmt.Sprintf("To:\n%s\n", katydid.String())
+	preInputDebug := debug
 	for _, xml := range spec.Xmls {
+		debug = preInputDebug + fmt.Sprintf("Input:\n%s\n", string(xml.Content))
 		err = Validate(katydid, xml.Content)
 		if xml.expectError() {
 			if err == nil {
-				t.Errorf("expected error for %s", xml.Filename)
+				t.Fatalf("%sexpected error for %s", debug, xml.Filename)
 			}
 			return
 		}
 		if err != nil {
-			t.Errorf("got unexpected error %s for %s", err, xml.Filename)
+			t.Fatalf("%sgot unexpected error <%s> for %s", debug, err, xml.Filename)
 		}
 	}
 }
 
+var namespaces = map[string]bool{
+	"050": true,
+	"051": true,
+	"052": true,
+	"095": true,
+	"099": true,
+	"104": true,
+	"110": true,
+	"122": true,
+	"123": true,
+	"124": true,
+	"125": true,
+	"126": true,
+	"127": true,
+	"128": true,
+	"130": true,
+	"131": true,
+	"132": true,
+	"133": true,
+	"176": true,
+	"217": true,
+	"218": true,
+	"219": true,
+	"220": true,
+	"221": true,
+	"222": true,
+	"248": true,
+	"254": true,
+	"255": true,
+	"256": true,
+	"258": true,
+	"259": true,
+	"262": true,
+	"263": true,
+	"266": true,
+	"267": true,
+	"270": true,
+	"271": true,
+	"272": true,
+	"273": true,
+	"274": true,
+	"275": true,
+	"280": true,
+	"353": true,
+	"354": true,
+}
+
+var fixable = map[string]bool{
+	"120": true,
+	"139": true,
+	"142": true,
+	"146": true,
+	"147": true,
+	"151": true,
+	"190": true,
+	"191": true,
+	"194": true,
+	"195": true,
+	"215": true,
+	"225": true,
+	"226": true,
+	"228": true,
+	"232": true,
+	"234": true,
+	"236": true,
+	"237": true,
+	"238": true,
+	"244": true,
+	"250": true,
+	"251": true,
+	"261": true,
+	"264": true,
+	"265": true,
+	"268": true,
+	"269": true,
+	"284": true,
+	"368": true,
+	"369": true,
+	"372": true,
+}
+
+func testNumber(filename string) string {
+	return filepath.Base(filepath.Dir(filename))
+}
+
 func TestSimpleSuite(t *testing.T) {
 	suite := scanFiles()
+	passed := 0
+	incorrect := 0
 	for _, spec := range suite {
+		num := testNumber(spec.Filename)
 		if len(spec.SimpleFilename) == 0 {
 			//skipping incorrect specifications
+			incorrect++
+			continue
+		}
+		if namespaces[num] {
+			t.Logf("%s [SKIP] namespaces not supported", num)
+			continue
+		}
+		if fixable[num] {
+			t.Errorf("%s [FAIL]", num)
 			continue
 		}
 		testSimple(t, spec)
+		t.Logf("%s [PASS]", num)
+		passed++
 	}
+	total := passed + len(fixable)
+	t.Logf("passed: %d/%d, failed: %d/%d, namespace tests skipped: %d, incorrect grammars skipped: %d", passed, total, len(fixable), total, len(namespaces), incorrect)
 }
