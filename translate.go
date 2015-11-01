@@ -25,9 +25,9 @@ func translate(g *Grammar) (*relapse.Grammar, error) {
 	refs := make(relapse.RefLookup)
 	refs["main"] = translatePattern(g.Start, false)
 	for _, d := range g.Define {
-		nameExpr := translateNameClass(d.Element.Left, false)
 		pattern := translatePattern(d.Element.Right, false)
-		refs[d.Name] = relapse.NewTreeNode(nameExpr, pattern)
+		pattern = newTreeNode(d.Element.Left, pattern)
+		refs[d.Name] = pattern
 	}
 	return relapse.NewGrammar(refs), nil
 }
@@ -105,6 +105,45 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 	panic(fmt.Sprintf("unreachable pattern %v", p))
 }
 
+func newTreeNode(n *NameOrPattern, pattern *relapse.Pattern) *relapse.Pattern {
+	if n.Choice != nil {
+		return relapse.NewOr(
+			newTreeNode(n.Choice.Left, pattern),
+			newTreeNode(n.Choice.Right, pattern),
+		)
+	}
+	if n.AnyName != nil {
+		if n.AnyName.Except == nil {
+			return relapse.NewTreeNode(
+				relapse.NewAnyName(),
+				pattern,
+			)
+		}
+		except := translateNameClass(n.AnyName.Except, false)
+		return relapse.NewTreeNode(relapse.NewAnyNameExcept(except), pattern)
+	}
+	if n.NsName != nil {
+		panic("nsName is not supported")
+	}
+	if n.Name != nil {
+		if len(n.Name.Ns) > 0 && n.Name.Ns != "TODO" {
+			return relapse.NewTreeNode(relapse.NewName(n.Name.Text), relapse.NewConcat(
+				relapse.NewTreeNode(relapse.NewName("@xmlns"),
+					combinator.Value(
+						funcs.StringEq(
+							funcs.StringVar(),
+							funcs.StringConst(n.Name.Ns),
+						),
+					),
+				),
+				pattern,
+			))
+		}
+		return relapse.NewTreeNode(relapse.NewName(n.Name.Text), pattern)
+	}
+	panic(fmt.Sprintf("unreachable nameclass %v", n))
+}
+
 func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 	if n.Choice != nil {
 		return relapse.NewNameChoice(
@@ -143,7 +182,7 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 
 func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
 	if p.Value != nil {
-		if len(p.Value.Ns) > 0 {
+		if len(p.Value.Ns) > 0 && p.Value.Ns != "TODO" {
 			panic("value ns not supported")
 		}
 		if p.Value.IsString() {
