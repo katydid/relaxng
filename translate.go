@@ -59,8 +59,12 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return combinator.Value(translateLeaf(p, funcs.StringVar()))
 	}
 	if p.List != nil {
-		regexStr := listToRegex(p.List.NameOrPattern)
-		return combinator.Value(funcs.Regex(funcs.StringConst(regexStr), Token(funcs.StringVar())))
+		regexStr, nullable := listToRegex(p.List.NameOrPattern)
+		val := combinator.Value(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(funcs.StringVar())))
+		if !nullable {
+			return val
+		}
+		return relapse.NewOr(val, relapse.NewEmpty())
 	}
 	if p.Attribute != nil {
 		nameExpr := translateNameClass(p.Attribute.Left, true)
@@ -153,34 +157,34 @@ func translateLeaf(p *NameOrPattern, v funcs.String) funcs.Bool {
 	panic(fmt.Sprintf("unsupported leaf %v", p))
 }
 
-func listToRegex(p *NameOrPattern) string {
+func listToRegex(p *NameOrPattern) (string, bool) {
 	if p.Empty != nil {
-		return ""
+		return "", true
 	}
 	if p.Data != nil {
 		if p.Data.Except == nil {
-			return `(\S)*`
+			return `(\S)*`, false
 		}
 	}
 	if p.Value != nil {
 		if len(p.Value.Ns) > 0 {
 			panic("list value ns not supported")
 		}
-		return p.Value.Text
+		return p.Value.Text, len(p.Value.Text) == 0
 	}
 	if p.OneOrMore != nil {
-		s := listToRegex(p.OneOrMore.NameOrPattern)
-		return "(" + s + ")+"
+		s, nullable := listToRegex(p.OneOrMore.NameOrPattern)
+		return "(" + s + ")+", nullable
 	}
 	if p.Choice != nil {
-		l := listToRegex(p.Choice.Left)
-		r := listToRegex(p.Choice.Right)
-		return "(" + l + "|" + r + ")"
+		l, nl := listToRegex(p.Choice.Left)
+		r, nr := listToRegex(p.Choice.Right)
+		return "(" + l + "|" + r + ")", nl || nr
 	}
 	if p.Group != nil {
-		l := listToRegex(p.Group.Left)
-		r := listToRegex(p.Group.Right)
-		return l + `\s` + r
+		l, nl := listToRegex(p.Group.Left)
+		r, nr := listToRegex(p.Group.Right)
+		return l + `\s` + r, nl && nr
 	}
 	panic(fmt.Sprintf("unsupported list %v", p))
 }

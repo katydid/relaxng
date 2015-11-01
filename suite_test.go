@@ -263,8 +263,6 @@ var fixable = map[string]bool{
 	"195": true, //interleave
 	"232": true, //attributes are not interleaved
 	"234": true, //element is expected before attributes
-	"237": true, //not valid - list
-	"238": true, //not valid - list
 	"251": true, //interleave
 }
 
@@ -318,5 +316,5 @@ func testDebug(t *testing.T, num string) {
 }
 
 // func TestDebug(t *testing.T) {
-// 	testDebug(t, "284")
+// 	testDebug(t, "237")
 // }
