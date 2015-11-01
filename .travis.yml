@@ -1,5 +1,5 @@
 install:
-  - go get -t ./...
+  - go get -u ./...
 
 script:
   - go test
