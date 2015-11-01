@@ -1,0 +1,10 @@
+install:
+	- go get -t ./...
+
+script:
+	- go test
+
+language: go
+
+go:
+	- 1.5
