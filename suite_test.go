@@ -211,6 +211,7 @@ var namespaces = map[string]bool{
 	"131": true,
 	"132": true,
 	"133": true,
+	"138": true,
 	"142": true,
 	"176": true,
 	"215": true,
@@ -238,6 +239,9 @@ var namespaces = map[string]bool{
 	"274": true,
 	"275": true,
 	"280": true,
+	"281": true,
+	"282": true,
+	"284": true,
 	"353": true,
 	"354": true,
 }
@@ -262,7 +266,6 @@ var fixable = map[string]bool{
 	"237": true, //not valid - list
 	"238": true, //not valid - list
 	"251": true, //interleave
-	"284": true, //expected error - list and namespace
 }
 
 func testNumber(filename string) string {
@@ -315,5 +318,5 @@ func testDebug(t *testing.T, num string) {
 }
 
 // func TestDebug(t *testing.T) {
-// 	testDebug(t, "268")
+// 	testDebug(t, "284")
 // }

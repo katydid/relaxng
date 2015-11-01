@@ -163,6 +163,9 @@ func listToRegex(p *NameOrPattern) string {
 		}
 	}
 	if p.Value != nil {
+		if len(p.Value.Ns) > 0 {
+			panic("list value ns not supported")
+		}
 		return p.Value.Text
 	}
 	if p.OneOrMore != nil {
