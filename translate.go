@@ -50,7 +50,7 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 			panic("data datatypeLibrary not supported")
 		}
 		if p.Data.Except == nil {
-			return combinator.Value(funcs.TypeString(funcs.StringVar()))
+			return relapse.NewOr(combinator.Value(funcs.TypeString(funcs.StringVar())), relapse.NewEmpty())
 		}
 		expr := translateLeaf(p.Data.Except, funcs.StringVar())
 		return combinator.Value(funcs.And(funcs.TypeString(funcs.StringVar()), funcs.Not(expr)))

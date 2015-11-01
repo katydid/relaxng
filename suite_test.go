@@ -256,9 +256,8 @@ var fixable = map[string]bool{
 	"237": true, //not valid - list
 	"238": true, //not valid - list
 	"251": true, //interleave
-	"265": true, //<foo/> seems to want to be valid against a string type, is a string type also optionally empty?
-	"268": true, //same as 265
-	"269": true, //same as 265 except for token also being optionally empty
+	"268": true, //<?target data?> needs to part of a data string
+	"269": true, //<?target data?> needs to part of a data token
 	"284": true, //expected error - list and namespace
 }
 
@@ -308,5 +307,5 @@ func testDebug(t *testing.T, num string) {
 }
 
 // func TestDebug(t *testing.T) {
-// 	testDebug(t, "372")
+// 	testDebug(t, "268")
 // }
