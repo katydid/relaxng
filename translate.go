@@ -137,9 +137,9 @@ func newTreeNode(n *NameOrPattern, pattern *relapse.Pattern) *relapse.Pattern {
 		panic("nsName is not supported")
 	}
 	if n.Name != nil {
-		if len(n.Name.Ns) > 0 && n.Name.Ns != "TODO" {
-			return relapse.NewTreeNode(relapse.NewName(n.Name.Text), relapse.NewConcat(
-				relapse.NewTreeNode(relapse.NewName("@xmlns"),
+		if len(n.Name.Ns) > 0 {
+			return relapse.NewTreeNode(relapse.NewStringName(n.Name.Text), relapse.NewConcat(
+				relapse.NewTreeNode(relapse.NewStringName("@xmlns"),
 					combinator.Value(
 						funcs.StringEq(
 							funcs.StringVar(),
@@ -150,7 +150,7 @@ func newTreeNode(n *NameOrPattern, pattern *relapse.Pattern) *relapse.Pattern {
 				pattern,
 			))
 		}
-		return relapse.NewTreeNode(relapse.NewName(n.Name.Text), pattern)
+		return relapse.NewTreeNode(relapse.NewStringName(n.Name.Text), pattern)
 	}
 	panic(fmt.Sprintf("unreachable nameclass %v", n))
 }
@@ -184,16 +184,16 @@ func translateNameClass(n *NameOrPattern, attr bool) *relapse.NameExpr {
 			panic(fmt.Sprintf("name ns <%v> is not supported", n.Name.Ns))
 		}
 		if attr {
-			return relapse.NewName("@" + n.Name.Text)
+			return relapse.NewStringName("@" + n.Name.Text)
 		}
-		return relapse.NewName(n.Name.Text)
+		return relapse.NewStringName(n.Name.Text)
 	}
 	panic(fmt.Sprintf("unreachable nameclass %v", n))
 }
 
 func translateLeaf(p *NameOrPattern, v funcs.String) (funcs.Bool, bool) {
 	if p.Value != nil {
-		if len(p.Value.Ns) > 0 && p.Value.Ns != "TODO" {
+		if len(p.Value.Ns) > 0 {
 			panic("value ns not supported")
 		}
 		if p.Value.IsString() {
@@ -219,7 +219,7 @@ func listToRegex(p *NameOrPattern) (string, bool) {
 		}
 	}
 	if p.Value != nil {
-		if len(p.Value.Ns) > 0 && p.Value.Ns != "TODO" {
+		if len(p.Value.Ns) > 0 {
 			panic("list value ns not supported")
 		}
 		return p.Value.Text, len(p.Value.Text) == 0

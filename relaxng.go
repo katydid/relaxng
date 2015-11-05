@@ -19,6 +19,7 @@ import (
 	"github.com/katydid/katydid/relapse/ast"
 	"github.com/katydid/katydid/relapse/interp"
 	"github.com/katydid/katydid/serialize/xml"
+	"reflect"
 )
 
 func Translate(relax []byte) (*relapse.Grammar, error) {
@@ -27,6 +28,10 @@ func Translate(relax []byte) (*relapse.Grammar, error) {
 		return nil, err
 	}
 	return translate(g)
+}
+
+func RemoveTODOs(g *Grammar) {
+	removeTODOs(reflect.ValueOf(g).Elem())
 }
 
 func Validate(katydid *relapse.Grammar, xmlContent []byte) error {

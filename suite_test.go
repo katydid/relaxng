@@ -163,8 +163,9 @@ func testSimple(t *testing.T, spec testCase, debugParser bool) {
 	if err != nil {
 		t.Fatalf("%sunparsable %s", debugStr, spec.SimpleFilename)
 	}
+	RemoveTODOs(g)
 	debugStr += fmt.Sprintf("Parsed:\n%s\n", g.String())
-	katydid, err := Translate(spec.SimpleContent)
+	katydid, err := translate(g)
 	if err != nil {
 		t.Fatalf("%sunexpected error <%s> for %s", debugStr, err, spec.SimpleFilename)
 	}
@@ -288,5 +289,5 @@ func testDebug(t *testing.T, num string) {
 }
 
 // func TestDebug(t *testing.T) {
-// 	testDebug(t, "267")
+// 	testDebug(t, "258")
 // }
