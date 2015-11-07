@@ -14,10 +14,6 @@ datatypeLibrary tests skipped: 1
 incorrect grammars skipped: 213
 ```
 
-Interleave is currently the main cause of problems.
-
-Namespace tests also need to be reinvestigated.
-
 ## Example 1
 
 The Simplified RelaxNG Grammar
