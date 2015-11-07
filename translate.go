@@ -31,6 +31,9 @@ func translate(g *Grammar) (*relapse.Grammar, error) {
 			pattern = addXmlns(pattern)
 		}
 		pattern = newTreeNode(d.Element.Left, pattern)
+		pattern = relapse.NewInterleave(pattern,
+			relapse.NewZeroOrMore(combinator.Value(funcs.Regex(funcs.StringConst("^(\\s)+$"), funcs.StringVar()))),
+		)
 		refs[d.Name] = pattern
 
 	}

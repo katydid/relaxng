@@ -214,9 +214,7 @@ var datatypeLibrary = map[string]bool{
 	"261": true,
 }
 
-var fixable = map[string]bool{
-	"258": true, //TODO
-}
+var fixable = map[string]bool{}
 
 func testNumber(filename string) string {
 	return filepath.Base(filepath.Dir(filename))
@@ -264,5 +262,5 @@ func testDebug(t *testing.T, num string) string {
 }
 
 // func TestDebug(t *testing.T) {
-// 	t.Logf(testDebug(t, "258"))
+// 	t.Logf(testDebug(t, "243"))
 // }
