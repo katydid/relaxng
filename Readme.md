@@ -1,8 +1,8 @@
-#Converts RelaxNG to Katydid
+#Translates RelaxNG to Katydid
 
-Converts Simplified [RelaxNG](http://relaxng.org/) Grammars to the [Katydid](https://github.com/katydid/katydid) Relapse Grammar.
+Translates Simplified [RelaxNG](http://relaxng.org/) Grammars to the [Katydid](https://github.com/katydid/katydid) Relapse Grammar.
 
-###Test Suite Status
+###RelaxNG Test Suite
 
 [![Build Status](https://travis-ci.org/katydid/relaxng.svg?branch=master)](https://travis-ci.org/katydid/relaxng)
 
@@ -13,6 +13,11 @@ namespace tests skipped: 13
 datatypeLibrary tests skipped: 1
 incorrect grammars skipped: 213
 ```
+
+Steps:
+ - The RelaxNG Test Suite is run through the simplifier which also eliminates all the incorrect grammars.
+ - Next these simplified RelaxNG XML Grammars are parsed and translated to Katydid Relapse.
+ - Finally the translated Relapse is used to validate the XML.
 
 ## Example 1
 
