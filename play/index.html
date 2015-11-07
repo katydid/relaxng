@@ -31,7 +31,6 @@ Copyright 2015 Walter Schulze
   <script src="http://codemirror.net/addon/mode/simple.js"></script>
   <script src="main.js"></script>
   <script src="example.js"></script>
-
   <script>
 
 function getUrlParameter(sParam) {
@@ -63,10 +62,12 @@ function validateCode(codeMirrors) {
 		var relapsecode = translateFunc(relaxngcode);
 		if (res == "true") {
 			$('#theoutput').prop("class", "alert alert-success");
-			$('#theoutput').text(relapsecode);
+			$('#theoutput').text("valid");
+			$('#outputlefttextarea').text(relapsecode);
 		} else if (res == "false") {
 			$('#theoutput').prop("class", "alert alert-warning");
-			$('#theoutput').text(relapsecode);
+			$('#theoutput').text("invalid");
+			$('#outputlefttextarea').text(relapsecode);
 		} else {
 			$('#theoutput').prop("class", "alert alert-danger");
 			$('#theoutput').text(res);
@@ -181,11 +182,6 @@ function init() {
 		saveCode(codeMirrors);
 	});
 
-	$("#validateButton").click(function(ev) { 
-		ev.preventDefault();
-		validateCode(codeMirrors);
-	});
-
 	setHeightDefault();
 	$("#autosizeButton").click(function(ev) {
 		ev.preventDefault();
@@ -256,7 +252,7 @@ function init() {
 	<div class="col-xs-6">
 		<div class="row">
 			<div class="col-xs-10">
-				<h3 id="inputheading">input</h3>	
+				<h3 class="rightheading" id="inputheading">input</h3>	
 			</div>
 			<div class="col-xs-2"></div>
 		</div>
@@ -288,6 +284,33 @@ function init() {
 	<div id="theoutput"></div>
 	</div>
 	<div class="col-xs-1"></div>
+</div>
+<div class="row">
+	<div class="col-xs-6">
+		<div class="row">
+			<div class="col-xs-2"></div>
+			<div class="col-xs-10">
+				<h3>Relapse</h3>	
+			</div>
+		</div>
+	</div>
+	<div class="col-xs-6">
+	</div>
+</div>
+<div class="row">
+	<div class="col-xs-6">
+		<div class="row">
+			<div class="col-xs-2"></div>
+			<div class="col-xs-10">
+				<div id="outputleft">
+				<textarea id="outputlefttextarea" style="height: 25em"readonly="true">
+				</textarea>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-xs-6">
+	</div>
 </div>
 <div class="row">
 	<div class="col-xs-1"></div>
@@ -362,11 +385,27 @@ function init() {
   		padding-right: 10px;
 	}
 
+	#outputleft {
+  		padding-right: 10px;
+	}
+
+	#outputlefttextarea{
+		width: 100%;
+	}
+
 	#righttextarea {
   		padding-left: 10px;
 	}
 
-	#inputheading {
+	#outputright {
+  		padding-left: 10px;
+	}
+
+	#outputrighttextarea {
+		width: 100%;
+	}
+
+	.rightheading {
 		padding-left: 10px;	
 	}
 
