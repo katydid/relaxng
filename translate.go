@@ -32,6 +32,36 @@ func translate(g *Grammar) (*relapse.Grammar, error) {
 	return relapse.NewGrammar(refs), nil
 }
 
+func hasAttr(p *NameOrPattern) bool {
+	if p.NotAllowed != nil ||
+		p.Empty != nil ||
+		p.Text != nil ||
+		p.Data != nil ||
+		p.Value != nil ||
+		p.List != nil {
+		return false
+	}
+	if p.Attribute != nil {
+		return true
+	}
+	if p.Ref != nil {
+		return false //TODO
+	}
+	if p.OneOrMore != nil {
+		return hasAttr(p.OneOrMore.NameOrPattern)
+	}
+	if p.Choice != nil {
+		return hasAttr(p.Choice.Left) || hasAttr(p.Choice.Right)
+	}
+	if p.Group != nil {
+		return hasAttr(p.Group.Left) || hasAttr(p.Group.Right)
+	}
+	if p.Interleave != nil {
+		return hasAttr(p.Interleave.Left) || hasAttr(p.Interleave.Right)
+	}
+	panic(fmt.Sprintf("unreachable pattern %v", p))
+}
+
 func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 	if p.NotAllowed != nil {
 		return relapse.NewEmptySet()
@@ -99,6 +129,12 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		right := translatePattern(p.Group.Right, attr)
 		if attr {
 			return relapse.NewInterleave(left, right)
+		}
+		if hasAttr(p.Group.Right) {
+			if hasAttr(p.Group.Left) {
+				return relapse.NewInterleave(left, right)
+			}
+			return relapse.NewConcat(right, left)
 		}
 		return relapse.NewConcat(left, right)
 	}

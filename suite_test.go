@@ -229,11 +229,6 @@ var processingInstructions = map[string]bool{
 	"269": true, //processing instructions <?target data?> needs to part of a data token
 }
 
-var fixable = map[string]bool{
-	"232": true, //attributes are not interleaved
-	"234": true, //element is expected before attributes
-}
-
 func testNumber(filename string) string {
 	return filepath.Base(filepath.Dir(filename))
 }
@@ -261,16 +256,11 @@ func TestSimpleSuite(t *testing.T) {
 			//t.Logf("%s [SKIP] processingInstructions not supported", num)
 			continue
 		}
-		if fixable[num] {
-			t.Errorf("%s [FAIL]", num)
-			continue
-		}
 		testSimple(t, spec, false)
 		//t.Logf("%s [PASS]", num)
 		passed++
 	}
-	total := passed + len(fixable)
-	t.Logf("passed: %d/%d, failed: %d/%d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, processing instruction tests skipped: %d, incorrect grammars skipped: %d", passed, total, len(fixable), total, len(namespaces), len(datatypeLibrary), len(processingInstructions), incorrect)
+	t.Logf("passed: %d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, processing instruction tests skipped: %d, incorrect grammars skipped: %d", passed, len(namespaces), len(datatypeLibrary), len(processingInstructions), incorrect)
 }
 
 func testDebug(t *testing.T, num string) {
