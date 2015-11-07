@@ -230,13 +230,8 @@ var processingInstructions = map[string]bool{
 }
 
 var fixable = map[string]bool{
-	"147": true, //interleave interleave(interleave(1,2), 3) = [[1,2]|[2,1],3]|[3,[1,2]|[2,1]] does not include 1,3,2
-	"151": true, //interleave
-	"194": true, //interleave
-	"195": true, //interleave
 	"232": true, //attributes are not interleaved
 	"234": true, //element is expected before attributes
-	"251": true, //interleave
 }
 
 func testNumber(filename string) string {

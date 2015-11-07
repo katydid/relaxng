@@ -30,6 +30,10 @@ func Translate(relax []byte) (*relapse.Grammar, error) {
 	return translate(g)
 }
 
+//The function removes the ns attributes with value TODO.
+//These can ns="TODO" attributes can become present
+//after converting from RelaxNG to Simplified RelaxNG
+//using rng2srng.jar
 func RemoveTODOs(g *Grammar) {
 	removeTODOs(reflect.ValueOf(g).Elem())
 }

@@ -98,20 +98,14 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		left := translatePattern(p.Group.Left, attr)
 		right := translatePattern(p.Group.Right, attr)
 		if attr {
-			return relapse.NewOr(
-				relapse.NewConcat(left, right),
-				relapse.NewConcat(right, left),
-			)
+			return relapse.NewInterleave(left, right)
 		}
 		return relapse.NewConcat(left, right)
 	}
 	if p.Interleave != nil {
 		left := translatePattern(p.Interleave.Left, attr)
 		right := translatePattern(p.Interleave.Right, attr)
-		return relapse.NewOr(
-			relapse.NewConcat(left, right),
-			relapse.NewConcat(right, left),
-		)
+		return relapse.NewInterleave(left, right)
 	}
 	panic(fmt.Sprintf("unreachable pattern %v", p))
 }
