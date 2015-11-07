@@ -35,9 +35,9 @@ The Simplified RelaxNG Grammar
 is translated to this Katydid Grammar
 
 ```
-#element1
+@element1
 
-@element1 = foo: <empty>
+#element1 = foo: <empty>
 ```
 
 
@@ -65,9 +65,9 @@ The Simplified RelaxNG Grammar
 is translated to this Katydid Grammar
 
 ```
-#element1
+@element1
 
-@element1 = foo: "@bar": (->type($string))*
+#element1 = foo: "@bar": (->type($string))*
 ```
 
 ## Example 3
@@ -118,22 +118,22 @@ The Simplified RelaxNG Grammar
 is translated to this Katydid Grammar
 
 ```
-#element1
+@element1
 
-@element1 = foo: (
+#element1 = foo: (
     [
         "@bar":<empty>,
-        #element2
+        @element2
     ] |
     [
         "@bar":(->type($string))*,
-        #element3
+        @element3
     ]
 )
 
-@element2 = baz1: <empty>
+#element2 = baz1: <empty>
 
-@element3 = baz2: <empty>
+#element3 = baz2: <empty>
 ```
 
 ## Known Issues
