@@ -294,7 +294,7 @@ func listToRegex(p *NameOrPattern) (string, bool) {
 	}
 	if p.OneOrMore != nil {
 		s, nullable := listToRegex(p.OneOrMore.NameOrPattern)
-		return "(" + s + ")+", nullable
+		return `(\s)?` + s + "(\\s" + s + ")*", nullable
 	}
 	if p.Choice != nil {
 		l, nl := listToRegex(p.Choice.Left)

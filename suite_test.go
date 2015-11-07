@@ -216,9 +216,6 @@ var datatypeLibrary = map[string]bool{
 
 var fixable = map[string]bool{
 	"258": true, //TODO
-	//"274": true, //TODO
-	//"275": true, //TODO
-	"281": true, //list  x x x x
 	"284": true, //TODO
 }
 
@@ -268,5 +265,5 @@ func testDebug(t *testing.T, num string) string {
 }
 
 // func TestDebug(t *testing.T) {
-// 	t.Logf(testDebug(t, "261"))
+// 	t.Logf(testDebug(t, "258"))
 // }
