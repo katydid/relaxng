@@ -2,7 +2,9 @@
 
 Translates Simplified [RelaxNG](http://relaxng.org/) Grammars to the [Katydid](https://github.com/katydid/katydid) Relapse Grammar.
 
-### Usage
+There is a playground available here http://katydid.github.io/relaxng/play/
+
+## Usage
 
 ```
 simplifiedRelaxNG := `
@@ -46,7 +48,7 @@ Steps:
  - Next these simplified RelaxNG XML Grammars are parsed and translated to Katydid Relapse.
  - Finally the translated Relapse is used to validate the XML.
 
-## Example 1
+### Example 1
 
 The Simplified RelaxNG Grammar
 
@@ -73,7 +75,7 @@ is translated to this Katydid Grammar
 ```
 
 
-## Example 2
+### Example 2
 
 The Simplified RelaxNG Grammar
 
@@ -102,7 +104,7 @@ is translated to this Katydid Grammar
 #element1 = foo: "@bar": (->type($string))*
 ```
 
-## Example 3
+### Example 3
 
 The Simplified RelaxNG Grammar
 
