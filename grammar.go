@@ -196,8 +196,8 @@ type Data struct {
 }
 
 //Returns whether this data type is a string type.
-//Only Type: string and Type: token are supported
-//An empty Type value implies a default value of token
+//Only type string and type token are supported.
+//An empty Type value implies a default value of token.
 func (this *Data) IsString() bool {
 	return this.Type == "string"
 }
@@ -216,8 +216,8 @@ type Value struct {
 
 //Returns whether this value type is a string type.
 //http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
-//Only Type: string and Type: token are supported
-//An empty Type value implies a default value of token
+//Only type string and type token are supported.
+//An empty Type value implies a default value of token.
 func (this *Value) IsString() bool {
 	return this.Type == "string"
 }
