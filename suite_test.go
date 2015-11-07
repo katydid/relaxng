@@ -113,32 +113,6 @@ func scanFiles() testSuite {
 	return suite
 }
 
-func testOneCase(t *testing.T, spec testCase) {
-	katydid, err := Translate(spec.Content)
-	if spec.expectError() {
-		if err == nil {
-			t.Errorf("expected error for %s", spec.Filename)
-		}
-		return
-	}
-	if err != nil {
-		t.Errorf("unexpected error %s for %s", err, spec.Filename)
-		return
-	}
-	for _, xml := range spec.Xmls {
-		err = Validate(katydid, xml.Content)
-		if xml.expectError() {
-			if err == nil {
-				t.Errorf("expected error for %s", xml.Filename)
-			}
-			return
-		}
-		if err != nil {
-			t.Errorf("got unexpected error %s for %s", err, xml.Filename)
-		}
-	}
-}
-
 func debugValidate(katydid *relapse.Grammar, xmlContent []byte) error {
 	p := xml.NewXMLParser()
 	if err := p.Init(xmlContent); err != nil {
@@ -165,7 +139,7 @@ func testSimple(t *testing.T, spec testCase, debugParser bool) string {
 	}
 	RemoveTODOs(g)
 	debugStr += fmt.Sprintf("Parsed:\n%s\n", g.String())
-	katydid, err := translate(g)
+	katydid, err := Translate(g)
 	if err != nil {
 		t.Fatalf("%sunexpected error <%s> for %s", debugStr, err, spec.SimpleFilename)
 	}

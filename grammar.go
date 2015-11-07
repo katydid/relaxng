@@ -21,6 +21,7 @@ import (
 	"reflect"
 )
 
+//Parses simplified RelaxNG XML into a Grammar structure.
 func ParseGrammar(buf []byte) (*Grammar, error) {
 	g := &Grammar{}
 	err := xml.Unmarshal(buf, g)

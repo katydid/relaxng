@@ -2,7 +2,34 @@
 
 Translates Simplified [RelaxNG](http://relaxng.org/) Grammars to the [Katydid](https://github.com/katydid/katydid) Relapse Grammar.
 
-###RelaxNG Test Suite
+### Usage
+
+```
+simplifiedRelaxNG := `
+<grammar>
+    <start>
+        <ref name="element1"></ref>
+    </start>
+    <define name="element1">
+        <element>
+            <name>foo</name>
+            <empty></empty>
+        </element>
+    </define>
+</grammar>`
+relaxing, _ := ParseGrammar([]byte(simplifiedRelaxNG))
+relapse, _ := Translate(relaxing)
+input := "<foo/>"
+if err := Validate(relapse, []byte(input)); err != nil {
+    fmt.Println("invalid")
+}
+fmt.Println("valid")
+// Output: valid
+```
+
+For more see the [go package documentation](https://godoc.org/github.com/katydid/relaxng)
+
+### RelaxNG Test Suite
 
 [![Build Status](https://travis-ci.org/katydid/relaxng.svg?branch=master)](https://travis-ci.org/katydid/relaxng)
 

@@ -22,22 +22,20 @@ import (
 	"reflect"
 )
 
-func Translate(relax []byte) (*relapse.Grammar, error) {
-	g, err := ParseGrammar(relax)
-	if err != nil {
-		return nil, err
-	}
+//Translates a parsed RelaxNG Grammar into a Katydid Relapse Grammar.
+func Translate(g *Grammar) (*relapse.Grammar, error) {
 	return translate(g)
 }
 
 //The function removes the ns attributes with value TODO.
-//These can ns="TODO" attributes can become present
+//These ns="TODO" attributes can become present
 //after converting from RelaxNG to Simplified RelaxNG
 //using rng2srng.jar
 func RemoveTODOs(g *Grammar) {
 	removeTODOs(reflect.ValueOf(g).Elem())
 }
 
+//Validates input xml against a Katydid Relapse Grammar.
 func Validate(katydid *relapse.Grammar, xmlContent []byte) error {
 	p := xml.NewXMLParser()
 	if err := p.Init(xmlContent); err != nil {

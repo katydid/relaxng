@@ -19,11 +19,12 @@ import (
 	"strings"
 )
 
+//Token is a function used in relapse as described in this chapter.
+//http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
 func Token(s funcs.String) funcs.String {
 	return &token{s}
 }
 
-//http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
 type token struct {
 	S funcs.String
 }
