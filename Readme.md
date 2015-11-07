@@ -1,6 +1,6 @@
 #Converts RelaxNG to Katydid
 
-Converts Simplified RelaxNG Grammars to the Katydid Relapse Grammar.
+Converts Simplified [RelaxNG](http://relaxng.org/) Grammars to the [Katydid](https://github.com/katydid/katydid) Relapse Grammar.
 
 ###Test Suite Status
 
