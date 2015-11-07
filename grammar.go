@@ -69,12 +69,14 @@ type Grammar struct {
 	Define  []Define       `xml:"define"`
 }
 
+//The define RelaxNG grammar element
 type Define struct {
 	Name string `xml:"name,attr"`
 	//Left is Name and Right is Pattern
 	Element Pair `xml:"element"`
 }
 
+//One of the name or pattern RelaxNG grammar elements
 type NameOrPattern struct {
 	NotAllowed *NotAllowed `xml:"notAllowed"`
 	Empty      *Empty      `xml:"empty"`
@@ -163,24 +165,28 @@ func (this *NameOrPattern) marshalXML(e *xml.Encoder, start xml.StartElement) er
 	return fmt.Errorf("unset pattern")
 }
 
+//The notAllowed RelaxNG grammar element.
 type NotAllowed struct {
 	XMLName xml.Name `xml:"notAllowed"`
 }
 
+//The empty RelaxNG grammar element.
 type Empty struct {
 	XMLName xml.Name `xml:"empty"`
 }
 
+//The text RelaxNG grammar element.
 type Text struct {
 	XMLName xml.Name `xml:"text"`
 }
 
+//The data RelaxNG grammar element which is described here:
 //http://books.xmlschemata.org/relaxng/ch17-77040.html
 //http://books.xmlschemata.org/relaxng/relax-CHP-8-SECT-1.html
-//  Even though katydid could easily support more types,
-//  only Type string and token are currently supported.
-//  This also means that Param is not currently supported.
-//	DatatypeLibrary is not supported.
+//Even though katydid could easily support more types,
+//only Type string and token are currently supported.
+//This also means that Param is not currently supported.
+//DatatypeLibrary is not supported.
 type Data struct {
 	XMLName         xml.Name       `xml:"data"`
 	Type            string         `xml:"type,attr"`
@@ -189,15 +195,17 @@ type Data struct {
 	Except          *NameOrPattern `xml:"except"`
 }
 
+//Returns whether this data type is a string type.
 //Only Type: string and Type: token are supported
-//  An empty Type value implies a default value of token
+//An empty Type value implies a default value of token
 func (this *Data) IsString() bool {
 	return this.Type == "string"
 }
 
+//The value RelaxNG grammar element which is described here:
 //http://books.xmlschemata.org/relaxng/ch17-77225.html
-//	Match a value in a text node
-//	DatatypeLibrary and Ns fields are not supported
+//Match a value in a text node.
+//DatatypeLibrary and Ns fields are not supported.
 type Value struct {
 	XMLName         xml.Name `xml:"value"`
 	DatatypeLibrary string   `xml:"datatypeLibrary,attr"`
@@ -206,13 +214,15 @@ type Value struct {
 	Text            string   `xml:",chardata"`
 }
 
+//Returns whether this value type is a string type.
 //http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
-//  Only Type: string and Type: token are supported
-//  An empty Type value implies a default value of token
+//Only Type: string and Type: token are supported
+//An empty Type value implies a default value of token
 func (this *Value) IsString() bool {
 	return this.Type == "string"
 }
 
+//The list RelaxNG grammar element which is described here:
 //http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-9.html
 //http://books.xmlschemata.org/relaxng/ch17-77136.html
 type List struct {
@@ -220,16 +230,19 @@ type List struct {
 	*NameOrPattern
 }
 
+//The oneOrMore RelaxNG grammar element.
 type OneOrMore struct {
 	XMLName xml.Name `xml:"oneOrMore"`
 	*NameOrPattern
 }
 
+//The ref RelaxNG grammar element.
 type Ref struct {
 	XMLName xml.Name `xml:"ref"`
 	Name    string   `xml:"name,attr"`
 }
 
+//A pair of RelaxNG grammar elements.
 type Pair struct {
 	Left  *NameOrPattern
 	Right *NameOrPattern
@@ -300,24 +313,28 @@ func (this *Pair) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return nil
 }
 
+//The param RelaxNG grammar element.
 type Param struct {
 	Name string `xml:",attr"`
 	Text string `xml:",chardata"`
 }
 
+//The anyNameClass RelaxNG grammar element.
 type AnyNameClass struct {
 	XMLName xml.Name       `xml:"anyName"`
 	Except  *NameOrPattern `xml:"except"`
 }
 
-//  Ns is not supported
+//The nsName RelaxNG grammar element.
+//This element is not supported.
 type NsNameClass struct {
 	XMLName xml.Name       `xml:"nsName"`
 	Ns      string         `xml:"ns,attr"`
 	Except  *NameOrPattern `xml:"except"`
 }
 
-//  Ns is not supported
+//The name RelaxNG grammar element.
+//Ns is not supported.
 type NameNameClass struct {
 	XMLName xml.Name `xml:"name"`
 	Ns      string   `xml:"ns,attr"`

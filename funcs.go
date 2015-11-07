@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-//Token is a function used in relapse as described in this chapter.
+//Token is a function used in relapse to validate values as described here
 //http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
 func Token(s funcs.String) funcs.String {
 	return &token{s}
