@@ -7,11 +7,10 @@ Converts Simplified RelaxNG Grammars to the Katydid Relapse Grammar.
 [![Build Status](https://travis-ci.org/katydid/relaxng.svg?branch=master)](https://travis-ci.org/katydid/relaxng)
 
 ```
-passed: 99
-failed: 7
-namespace tests skipped: 51
+passed: 144
+failed: 2
+namespace tests skipped: 13
 datatypeLibrary tests skipped: 1
-processing instruction tests skipped: 2
 incorrect grammars skipped: 213
 ```
 
@@ -148,7 +147,6 @@ There are quite a few known issues:
   - namespaces are not supported.
   - datatypes: only string and token are currently supported.
   - datatypeLibraries are not supported.
-  - XML [processing instructions](//http://www.w3.org/TR/2008/REC-xml-20081126/#sec-pi) are not supported
 
 I don't really intend to fix these, but you never know.
 
