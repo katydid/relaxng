@@ -211,19 +211,15 @@ var namespaces = map[string]bool{
 }
 
 var datatypeLibrary = map[string]bool{
-	"099": true,
 	"261": true,
-	"258": true, //TODO
-	"274": true, //TODO
-	"275": true, //TODO
-	"281": true, //TODO
-	"284": true, //TODO
 }
 
-//https://golang.org/pkg/encoding/xml/#ProcInst
-var processingInstructions = map[string]bool{
-	"268": true, //processing instructions <?target data?> needs to part of a data string
-	"269": true, //processing instructions <?target data?> needs to part of a data token
+var fixable = map[string]bool{
+	"258": true, //TODO
+	//"274": true, //TODO
+	//"275": true, //TODO
+	"281": true, //list  x x x x
+	"284": true, //TODO
 }
 
 func testNumber(filename string) string {
@@ -249,15 +245,15 @@ func TestSimpleSuite(t *testing.T) {
 			//t.Logf("%s [SKIP] datatypeLibrary not supported", num)
 			continue
 		}
-		if processingInstructions[num] {
-			//t.Logf("%s [SKIP] processingInstructions not supported", num)
+		if fixable[num] {
+			t.Errorf("%s [FAIL]", num)
 			continue
 		}
 		testSimple(t, spec, false)
 		//t.Logf("%s [PASS]", num)
 		passed++
 	}
-	t.Logf("passed: %d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, processing instruction tests skipped: %d, incorrect grammars skipped: %d", passed, len(namespaces), len(datatypeLibrary), len(processingInstructions), incorrect)
+	t.Logf("passed: %d, failed: %d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, incorrect grammars skipped: %d", passed, len(fixable), len(namespaces), len(datatypeLibrary), incorrect)
 }
 
 func testDebug(t *testing.T, num string) string {
@@ -271,6 +267,6 @@ func testDebug(t *testing.T, num string) string {
 	return "unknown number " + num
 }
 
-func TestDebug(t *testing.T) {
-	t.Logf(testDebug(t, "215"))
-}
+// func TestDebug(t *testing.T) {
+// 	t.Logf(testDebug(t, "261"))
+// }

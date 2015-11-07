@@ -19,6 +19,7 @@ import (
 	"github.com/katydid/katydid/funcs"
 	"github.com/katydid/katydid/relapse/ast"
 	"github.com/katydid/katydid/relapse/combinator"
+	"strings"
 )
 
 func translate(g *Grammar) (*relapse.Grammar, error) {
@@ -96,7 +97,10 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		if attr {
 			return combinator.Value(funcs.StringEq(Token(funcs.StringVar()), funcs.StringConst("")))
 		}
-		return relapse.NewEmpty()
+		return relapse.NewOr(
+			relapse.NewEmpty(),
+			combinator.Value(funcs.StringEq(Token(funcs.StringVar()), funcs.StringConst(""))),
+		)
 	}
 	if p.Text != nil {
 		return relapse.NewZeroOrMore(combinator.Value(funcs.TypeString(funcs.StringVar())))
@@ -255,10 +259,15 @@ func translateLeaf(p *NameOrPattern, v funcs.String) (funcs.Bool, bool) {
 		if len(p.Value.Ns) > 0 {
 			panic("value ns not supported")
 		}
+		text := p.Value.Text
 		if p.Value.IsString() {
-			return funcs.StringEq(funcs.StringConst(p.Value.Text), v), len(p.Value.Text) == 0
+			return funcs.StringEq(funcs.StringConst(text), v), len(text) == 0
 		}
-		return funcs.StringEq(funcs.StringConst(p.Value.Text), Token(v)), len(p.Value.Text) == 0
+		text = strings.Replace(text, "\n", "", -1)
+		text = strings.Replace(text, "\r", "", -1)
+		text = strings.Replace(text, "\t", "", -1)
+		text = strings.TrimSpace(text)
+		return funcs.StringEq(funcs.StringConst(text), Token(v)), len(text) == 0
 	}
 	if p.Choice != nil {
 		l, nl := translateLeaf(p.Choice.Left, v)
