@@ -130,7 +130,10 @@ func translatePattern(p *NameOrPattern, attr bool) *relapse.Pattern {
 		return relapse.NewOr(combinator.Value(v), relapse.NewEmpty())
 	}
 	if p.List != nil {
-		regexStr, nullable := listToRegex(p.List.NameOrPattern)
+		regexStr, nullable, err := listToRegex(p.List.NameOrPattern)
+		if err != nil {
+			return combinator.Value(funcs.BoolConst(false))
+		}
 		val := combinator.Value(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(funcs.StringVar())))
 		if !nullable {
 			return val
@@ -277,34 +280,53 @@ func translateLeaf(p *NameOrPattern, v funcs.String) (funcs.Bool, bool) {
 	panic(fmt.Sprintf("unsupported leaf %v", p))
 }
 
-func listToRegex(p *NameOrPattern) (string, bool) {
+func listToRegex(p *NameOrPattern) (string, bool, error) {
 	if p.Empty != nil {
-		return "", true
+		return "", true, nil
 	}
 	if p.Data != nil {
 		if p.Data.Except == nil {
-			return `(\S)*`, false
+			return `(\S)*`, false, nil
 		}
 	}
 	if p.Value != nil {
 		if len(p.Value.Ns) > 0 {
 			panic("list value ns not supported")
 		}
-		return p.Value.Text, len(p.Value.Text) == 0
+		if strings.Contains(p.Value.Text, " ") {
+			return "", false, fmt.Errorf("unable to match a list")
+		}
+		return p.Value.Text, len(p.Value.Text) == 0, nil
 	}
 	if p.OneOrMore != nil {
-		s, nullable := listToRegex(p.OneOrMore.NameOrPattern)
-		return `(\s)?` + s + "(\\s" + s + ")*", nullable
+		s, nullable, err := listToRegex(p.OneOrMore.NameOrPattern)
+		return `(\s)?` + s + "(\\s" + s + ")*", nullable, err
 	}
 	if p.Choice != nil {
-		l, nl := listToRegex(p.Choice.Left)
-		r, nr := listToRegex(p.Choice.Right)
-		return "(" + l + "|" + r + ")", nl || nr
+		l, nl, errl := listToRegex(p.Choice.Left)
+		r, nr, errr := listToRegex(p.Choice.Right)
+		if errl != nil && errr != nil {
+			return "", false, errl
+		}
+		if errl != nil {
+			return r, nr, nil
+		}
+		if errr != nil {
+			return l, nl, nil
+		}
+		return "(" + l + "|" + r + ")", nl || nr, nil
 	}
 	if p.Group != nil {
-		l, nl := listToRegex(p.Group.Left)
-		r, nr := listToRegex(p.Group.Right)
-		return l + `\s` + r, nl && nr
+		l, nl, errl := listToRegex(p.Group.Left)
+		r, nr, errr := listToRegex(p.Group.Right)
+		var err error = nil
+		if errl != nil {
+			err = errl
+		}
+		if errr != nil {
+			err = errr
+		}
+		return l + `\s` + r, nl && nr, err
 	}
 	panic(fmt.Sprintf("unsupported list %v", p))
 }

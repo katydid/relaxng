@@ -216,7 +216,6 @@ var datatypeLibrary = map[string]bool{
 
 var fixable = map[string]bool{
 	"258": true, //TODO
-	"284": true, //TODO
 }
 
 func testNumber(filename string) string {
