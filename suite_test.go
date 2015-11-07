@@ -151,7 +151,7 @@ func debugValidate(katydid *relapse.Grammar, xmlContent []byte) error {
 	return nil
 }
 
-func testSimple(t *testing.T, spec testCase, debugParser bool) {
+func testSimple(t *testing.T, spec testCase, debugParser bool) string {
 	debugStr := fmt.Sprintf("Original:\n%s\n", string(spec.SimpleContent))
 	defer func() {
 		r := recover()
@@ -185,42 +185,39 @@ func testSimple(t *testing.T, spec testCase, debugParser bool) {
 			if err == nil {
 				t.Fatalf("%sexpected error for %s", debugStr, xml.Filename)
 			}
-			return
+			return debugStr
 		}
 		if err != nil {
 			t.Fatalf("%sgot unexpected error <%s> for %s", debugStr, err, xml.Filename)
 		}
 	}
+	return debugStr
 }
 
 var namespaces = map[string]bool{
-	"122": true,
-	"124": true,
-	"128": true,
-	"131": true,
-	"132": true,
-	"215": true,
+	"122": true, //<name ns="http://www.example.com">
+	"124": true, //<name ns="http://www.example.com">
+	"128": true, //<name ns="http://www.example.com">
+	"131": true, //<name ns="http://www.example.com">
+	"132": true, //<name ns="http://www.w3.org/XML/1998/namespace">
 	"217": true,
 	"218": true,
-	"219": true,
-	"220": true,
-	"221": true,
+	"219": true, //<nsName ns="http://www.example.com">
+	"220": true, //<nsName ns="http://www.example.com">
+	"221": true, //<nsName ns="http://www.example.com">
 	"248": true,
-	"258": true,
-	"266": true,
-	"274": true,
-	"275": true,
-	"280": true,
-	"281": true,
-	"282": true,
-	"284": true,
 	"353": true,
-	"354": true,
+	"354": true, //<nsName ns="http://www.example.com/1">
 }
 
 var datatypeLibrary = map[string]bool{
 	"099": true,
 	"261": true,
+	"258": true, //TODO
+	"274": true, //TODO
+	"275": true, //TODO
+	"281": true, //TODO
+	"284": true, //TODO
 }
 
 //https://golang.org/pkg/encoding/xml/#ProcInst
@@ -263,16 +260,17 @@ func TestSimpleSuite(t *testing.T) {
 	t.Logf("passed: %d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, processing instruction tests skipped: %d, incorrect grammars skipped: %d", passed, len(namespaces), len(datatypeLibrary), len(processingInstructions), incorrect)
 }
 
-func testDebug(t *testing.T, num string) {
+func testDebug(t *testing.T, num string) string {
 	suite := scanFiles()
 	for _, spec := range suite {
 		if num != testNumber(spec.Filename) {
 			continue
 		}
-		testSimple(t, spec, true)
+		return testSimple(t, spec, true)
 	}
+	return "unknown number " + num
 }
 
-// func TestDebug(t *testing.T) {
-// 	testDebug(t, "258")
-// }
+func TestDebug(t *testing.T) {
+	t.Logf(testDebug(t, "215"))
+}

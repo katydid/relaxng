@@ -26,10 +26,36 @@ func translate(g *Grammar) (*relapse.Grammar, error) {
 	refs["main"] = translatePattern(g.Start, false)
 	for _, d := range g.Define {
 		pattern := translatePattern(d.Element.Right, false)
+		if !hasNsName(d.Element.Left) {
+			pattern = addXmlns(pattern)
+		}
 		pattern = newTreeNode(d.Element.Left, pattern)
 		refs[d.Name] = pattern
+
 	}
 	return relapse.NewGrammar(refs), nil
+}
+
+func addXmlns(p *relapse.Pattern) *relapse.Pattern {
+	return relapse.NewConcat(
+		relapse.NewOptional(
+			relapse.NewTreeNode(relapse.NewStringName("@xmlns"), relapse.NewZAny()),
+		),
+		p,
+	)
+}
+
+func hasNsName(n *NameOrPattern) bool {
+	if n.Choice != nil {
+		return hasNsName(n.Choice.Left) || hasNsName(n.Choice.Right)
+	}
+	if n.NsName != nil {
+		return true
+	}
+	if n.Name != nil {
+		return true
+	}
+	return false
 }
 
 func hasAttr(p *NameOrPattern) bool {
@@ -164,6 +190,9 @@ func newTreeNode(n *NameOrPattern, pattern *relapse.Pattern) *relapse.Pattern {
 		return relapse.NewTreeNode(relapse.NewAnyNameExcept(except), pattern)
 	}
 	if n.NsName != nil {
+		// if len(n.NsName.Ns) == 0 {
+		// 	return relapse.NewTreeNode(relapse.NewAnyName(), pattern)
+		// }
 		panic("nsName is not supported")
 	}
 	if n.Name != nil {
