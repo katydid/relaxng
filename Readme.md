@@ -4,6 +4,10 @@ Translates Simplified [RelaxNG](http://relaxng.org/) Grammars to the [Katydid](h
 
 There is a playground available here http://katydid.github.io/relaxng/play/
 
+Simplification is defined at these two resources:
+  - http://debeissat.nicolas.free.fr/relaxng_simplification.php
+  - http://books.xmlschemata.org/relaxng/relax-CHP-15-SECT-1.html
+
 ## Usage
 
 ```
