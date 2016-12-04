@@ -15,7 +15,7 @@
 package relaxng
 
 import (
-	"github.com/katydid/katydid/funcs"
+	"github.com/katydid/katydid/relapse/funcs"
 	"strings"
 )
 

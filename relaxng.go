@@ -17,14 +17,14 @@ package relaxng
 
 import (
 	"errors"
+	"github.com/katydid/katydid/parser/xml"
 	"github.com/katydid/katydid/relapse/ast"
 	"github.com/katydid/katydid/relapse/interp"
-	"github.com/katydid/katydid/serialize/xml"
 	"reflect"
 )
 
 //Translates a parsed RelaxNG Grammar into a Katydid Relapse Grammar.
-func Translate(g *Grammar) (*relapse.Grammar, error) {
+func Translate(g *Grammar) (*ast.Grammar, error) {
 	return translate(g)
 }
 
@@ -36,13 +36,21 @@ func RemoveTODOs(g *Grammar) {
 	removeTODOs(reflect.ValueOf(g).Elem())
 }
 
+func NewXMLParser() xml.XMLParser {
+	return xml.NewXMLParser(xml.WithAttrPrefix("attr_"), xml.WithElemPrefix("elem_"))
+}
+
 //Validates input xml against a Katydid Relapse Grammar.
-func Validate(katydid *relapse.Grammar, xmlContent []byte) error {
-	p := xml.NewXMLParser()
+func Validate(katydid *ast.Grammar, xmlContent []byte) error {
+	p := NewXMLParser()
 	if err := p.Init(xmlContent); err != nil {
 		return err
 	}
-	if !interp.Interpret(katydid, p) {
+	valid, err := interp.Interpret(katydid, p)
+	if err != nil {
+		return err
+	}
+	if !valid {
 		return errors.New("not valid")
 	}
 	return nil
