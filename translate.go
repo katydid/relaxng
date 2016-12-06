@@ -32,7 +32,7 @@ func translate(g *Grammar) (*ast.Grammar, error) {
 		}
 		pattern = newTreeNode(d.Element.Left, pattern)
 		pattern = ast.NewInterleave(pattern,
-			ast.NewZeroOrMore(combinator.Value(funcs.Regex(funcs.StringConst("^(\\s)+$"), funcs.StringVar()))),
+			ast.NewZeroOrMore(NewLeaf(funcs.Regex(funcs.StringConst("^(\\s)+$"), StripTextPrefix(funcs.StringVar())))),
 		)
 		refs[d.Name] = pattern
 
@@ -40,6 +40,10 @@ func translate(g *Grammar) (*ast.Grammar, error) {
 	gg := ast.NewGrammar(refs)
 	gg.Format()
 	return gg, nil
+}
+
+func NewLeaf(f funcs.Bool) *ast.Pattern {
+	return combinator.Value(TypeAndTrue(f))
 }
 
 func addXmlns(p *ast.Pattern) *ast.Pattern {
@@ -100,26 +104,26 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 	}
 	if p.Empty != nil {
 		if attr {
-			return combinator.Value(funcs.StringEq(Token(funcs.StringVar()), funcs.StringConst("")))
+			return NewLeaf(funcs.StringEq(Token(StripTextPrefix(funcs.StringVar())), funcs.StringConst("")))
 		}
 		return ast.NewOr(
 			ast.NewEmpty(),
-			combinator.Value(funcs.StringEq(Token(funcs.StringVar()), funcs.StringConst(""))),
+			NewLeaf(funcs.StringEq(Token(StripTextPrefix(funcs.StringVar())), funcs.StringConst(""))),
 		)
 	}
 	if p.Text != nil {
-		return ast.NewZeroOrMore(combinator.Value(funcs.TypeString(funcs.StringVar())))
+		return ast.NewZeroOrMore(NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))))
 	}
 	if p.Data != nil {
 		if len(p.Data.DatatypeLibrary) > 0 {
 			panic("data datatypeLibrary not supported")
 		}
 		if p.Data.Except == nil {
-			return ast.NewOr(combinator.Value(funcs.TypeString(funcs.StringVar())), ast.NewEmpty())
+			return ast.NewOr(NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))), ast.NewEmpty())
 		}
-		expr, nullable := translateLeaf(p.Data.Except, funcs.StringVar())
-		v := combinator.Value(funcs.And(
-			funcs.TypeString(funcs.StringVar()),
+		expr, nullable := translateLeaf(p.Data.Except, StripTextPrefix(funcs.StringVar()))
+		v := NewLeaf(funcs.And(
+			funcs.TypeString(StripTextPrefix(funcs.StringVar())),
 			funcs.Not(expr),
 		))
 		if nullable {
@@ -128,18 +132,18 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 		return ast.NewOr(v, ast.NewEmpty())
 	}
 	if p.Value != nil {
-		v, nullable := translateLeaf(p, funcs.StringVar())
+		v, nullable := translateLeaf(p, StripTextPrefix(funcs.StringVar()))
 		if !nullable {
-			return combinator.Value(v)
+			return NewLeaf(v)
 		}
-		return ast.NewOr(combinator.Value(v), ast.NewEmpty())
+		return ast.NewOr(NewLeaf(v), ast.NewEmpty())
 	}
 	if p.List != nil {
 		regexStr, nullable, err := listToRegex(p.List.NameOrPattern)
 		if err != nil {
-			return combinator.Value(funcs.BoolConst(false))
+			return NewLeaf(funcs.BoolConst(false))
 		}
-		val := combinator.Value(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(funcs.StringVar())))
+		val := NewLeaf(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(StripTextPrefix(funcs.StringVar()))))
 		if !nullable {
 			return val
 		}
@@ -211,9 +215,9 @@ func newTreeNode(n *NameOrPattern, pattern *ast.Pattern) *ast.Pattern {
 		if len(n.Name.Ns) > 0 {
 			return ast.NewTreeNode(ast.NewStringName("elem_"+n.Name.Text), ast.NewConcat(
 				ast.NewTreeNode(ast.NewStringName("attr_xmlns"),
-					combinator.Value(
+					NewLeaf(
 						funcs.StringEq(
-							funcs.StringVar(),
+							StripTextPrefix(funcs.StringVar()),
 							funcs.StringConst(n.Name.Ns),
 						),
 					),

@@ -37,7 +37,7 @@ func RemoveTODOs(g *Grammar) {
 }
 
 func NewXMLParser() xml.XMLParser {
-	return xml.NewXMLParser(xml.WithAttrPrefix("attr_"), xml.WithElemPrefix("elem_"))
+	return xml.NewXMLParser(xml.WithAttrPrefix("attr_"), xml.WithElemPrefix("elem_"), xml.WithTextPrefix("text_"))
 }
 
 //Validates input xml against a Katydid Relapse Grammar.
