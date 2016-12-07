@@ -13,7 +13,7 @@ func TestRemoveTODO(t *testing.T) {
 			},
 		},
 		Define: []Define{
-			Define{
+			{
 				Element: Pair{
 					Right: &NameOrPattern{
 						Value: &Value{

@@ -4,9 +4,9 @@ before_install:
 install: true
 
 script:
-  - go test
+  - make travis
 
 language: go
 
 go:
-  - 1.5
+  - 1.7.1

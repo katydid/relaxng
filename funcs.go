@@ -15,7 +15,9 @@
 package relaxng
 
 import (
-	"github.com/katydid/katydid/funcs"
+	"github.com/katydid/katydid/relapse/funcs"
+
+	"fmt"
 	"strings"
 )
 
@@ -61,4 +63,49 @@ func tokenize(s string) []string {
 
 func init() {
 	funcs.Register("token", new(token))
+}
+
+//StripTextPrefix is a function used in relapse to remove the text prefix added by the xml parser.
+func StripTextPrefix(s funcs.String) funcs.String {
+	return &stripTextPrefix{s}
+}
+
+type stripTextPrefix struct {
+	S funcs.String
+}
+
+func (this *stripTextPrefix) Eval() (string, error) {
+	s, err := this.S.Eval()
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(s, "text_") {
+		return strings.Replace(s, "text_", "", 1), nil
+	}
+	return "", fmt.Errorf("%q is not of type text", s)
+}
+
+func init() {
+	funcs.Register("stripTextPrefix", new(stripTextPrefix))
+}
+
+//TypeAndTrue is a function used in relapse to return true if the input bool is true and no error was returned.
+func TypeAndTrue(b funcs.Bool) funcs.Bool {
+	return &typeAndTrue{b}
+}
+
+type typeAndTrue struct {
+	B funcs.Bool
+}
+
+func (this *typeAndTrue) Eval() (bool, error) {
+	b, err := this.B.Eval()
+	if err != nil {
+		return false, nil
+	}
+	return b, nil
+}
+
+func init() {
+	funcs.Register("typeAndTrue", new(typeAndTrue))
 }

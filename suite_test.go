@@ -16,10 +16,9 @@ package relaxng
 
 import (
 	"fmt"
+	sdebug "github.com/katydid/katydid/parser/debug"
 	"github.com/katydid/katydid/relapse/ast"
 	"github.com/katydid/katydid/relapse/interp"
-	sdebug "github.com/katydid/katydid/serialize/debug"
-	"github.com/katydid/katydid/serialize/xml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -113,19 +112,23 @@ func scanFiles() testSuite {
 	return suite
 }
 
-func debugValidate(katydid *relapse.Grammar, xmlContent []byte) error {
-	p := xml.NewXMLParser()
+func debugValidate(katydid *ast.Grammar, xmlContent []byte) error {
+	p := NewXMLParser()
 	if err := p.Init(xmlContent); err != nil {
 		return err
 	}
 	d := sdebug.NewLogger(p, sdebug.NewLineLogger())
-	if !interp.Interpret(katydid, d) {
+	valid, err := interp.Interpret(katydid, d)
+	if err != nil {
+		return err
+	}
+	if !valid {
 		return fmt.Errorf("not valid")
 	}
 	return nil
 }
 
-func testSimple(t *testing.T, spec testCase, debugParser bool) string {
+func testSimple(t *testing.T, spec testCase, debugParser bool) bool {
 	debugStr := fmt.Sprintf("Original:\n%s\n", string(spec.SimpleContent))
 	defer func() {
 		r := recover()
@@ -145,6 +148,7 @@ func testSimple(t *testing.T, spec testCase, debugParser bool) string {
 	}
 	debugStr += fmt.Sprintf("To:\n%s\n", katydid.String())
 	preInputDebug := debugStr
+	passed := true
 	for _, xml := range spec.Xmls {
 		if debugParser {
 			fmt.Printf("--- PARSING %s\n", xml.Filename)
@@ -157,15 +161,19 @@ func testSimple(t *testing.T, spec testCase, debugParser bool) string {
 		}
 		if xml.expectError() {
 			if err == nil {
-				t.Fatalf("%sexpected error for %s", debugStr, xml.Filename)
+				t.Errorf("%sexpected error for %s", debugStr, xml.Filename)
+				passed = false
+				continue
 			}
-			return debugStr
+			return passed
 		}
 		if err != nil {
-			t.Fatalf("%sgot unexpected error <%s> for %s", debugStr, err, xml.Filename)
+			t.Errorf("%sgot unexpected error <%s> for %s", debugStr, err, xml.Filename)
+			passed = false
+			continue
 		}
 	}
-	return debugStr
+	return passed
 }
 
 var namespaces = map[string]bool{
@@ -188,8 +196,6 @@ var datatypeLibrary = map[string]bool{
 	"261": true,
 }
 
-var fixable = map[string]bool{}
-
 func testNumber(filename string) string {
 	return filepath.Base(filepath.Dir(filename))
 }
@@ -197,44 +203,35 @@ func testNumber(filename string) string {
 func TestSimpleSuite(t *testing.T) {
 	suite := scanFiles()
 	passed := 0
-	incorrect := 0
+	incorrectSkipped := 0
+	failed := 0
+	namespacesSkipped := 0
+	datatypeLibrarySkipped := 0
 	for _, spec := range suite {
 		num := testNumber(spec.Filename)
-		if len(spec.SimpleFilename) == 0 {
-			//skipping incorrect specifications
-			incorrect++
-			continue
-		}
-		if namespaces[num] {
-			//t.Logf("%s [SKIP] namespaces not supported", num)
-			continue
-		}
-		if datatypeLibrary[num] {
-			//t.Logf("%s [SKIP] datatypeLibrary not supported", num)
-			continue
-		}
-		if fixable[num] {
-			t.Errorf("%s [FAIL]", num)
-			continue
-		}
-		testSimple(t, spec, false)
-		//t.Logf("%s [PASS]", num)
-		passed++
+		t.Run(num, func(t *testing.T) {
+			if len(spec.SimpleFilename) == 0 {
+				incorrectSkipped++
+				t.Skip("incorrect specification")
+				return
+			}
+			if namespaces[num] {
+				namespacesSkipped++
+				t.Skip("namespaces not supported")
+				return
+			}
+			if datatypeLibrary[num] {
+				datatypeLibrarySkipped++
+				t.Skip("datatypeLibrary not supported")
+				return
+			}
+			if testSimple(t, spec, true) {
+				passed++
+			} else {
+				failed++
+				t.Fatal()
+			}
+		})
 	}
-	t.Logf("passed: %d, failed: %d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, incorrect grammars skipped: %d", passed, len(fixable), len(namespaces), len(datatypeLibrary), incorrect)
+	t.Logf("passed: %d, failed: %d, namespace tests skipped: %d, datatypeLibrary tests skipped: %d, incorrect grammars skipped: %d", passed, failed, namespacesSkipped, datatypeLibrarySkipped, incorrectSkipped)
 }
-
-func testDebug(t *testing.T, num string) string {
-	suite := scanFiles()
-	for _, spec := range suite {
-		if num != testNumber(spec.Filename) {
-			continue
-		}
-		return testSimple(t, spec, true)
-	}
-	return "unknown number " + num
-}
-
-// func TestDebug(t *testing.T) {
-// 	t.Logf(testDebug(t, "243"))
-// }
