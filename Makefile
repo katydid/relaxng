@@ -7,6 +7,9 @@ test:
 gofmt:
 	gofmt -l -s -w .
 
+js:
+	(cd play && make)
+
 vet:
 	go vet ./...
 
