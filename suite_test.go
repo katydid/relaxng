@@ -113,6 +113,7 @@ func scanFiles() testSuite {
 }
 
 func debugValidate(katydid *ast.Grammar, xmlContent []byte) error {
+	fmt.Printf("%v\n", katydid)
 	p := NewXMLParser()
 	if err := p.Init(xmlContent); err != nil {
 		return err
@@ -225,7 +226,7 @@ func TestSimpleSuite(t *testing.T) {
 				t.Skip("datatypeLibrary not supported")
 				return
 			}
-			if testSimple(t, spec, true) {
+			if testSimple(t, spec, false) {
 				passed++
 			} else {
 				failed++
