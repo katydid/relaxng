@@ -109,10 +109,31 @@ function loadCodeFromGist(codeMirrors) {
 			for (key in codeMirrors) {
 				codeMirrors[key].setValue(content.files[key+"src"].content);
 			}
+			validateCode(codeMirrors);
 		} else {
 			reportError(err);
 		}
 	});
+}
+
+function loadCodeFromTest(codeMirrors, testnum, xmlName) {
+	$.ajax({
+	  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/s.rng',
+	  dataType: "text",
+	  async: false,
+	  success: function(data) {
+    	codeMirrors["relaxng"].setValue(data); 
+	  }
+	});
+	$.ajax({
+	  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/' + xmlName + '.xml',
+	  dataType: "text",
+	  async: false,
+	  success: function(data) {
+    	codeMirrors["xml"].setValue(data); 
+	  }
+	});
+	validateCode(codeMirrors);
 }
 
 function displayShareBox() {
@@ -150,10 +171,12 @@ function setHeightDefault() {
 function setDefaults(codeMirrors) {
 	codeMirrors["xml"].setValue(defaults["xml"]);
 	codeMirrors["relaxng"].setValue(defaults["relaxng"]);
+	validateCode(codeMirrors);
 }
 
 function init() {
 	gistText = getUrlParameter("gist");
+	suiteText = getUrlParameter("testsuite")
 	share = getUrlParameter("share");
 	var relaxngCodeMirror = CodeMirror(document.getElementById("lefttextarea"), {
   		mode:  "xml",
@@ -169,13 +192,22 @@ function init() {
 	codeMirrors["xml"] = xmlCodeMirror;
 	$("#inputheading").text("XML input");
 
-	if (gistText == undefined) {
-		setDefaults(codeMirrors);
-	} else {
+	if (!(gistText == undefined)) {
 		loadCodeFromGist(codeMirrors);
 		if (!(share == undefined)) {
 			displayShareBox();
 	    }
+	} else if (!(suiteText == undefined)) {
+		var ss = suiteText.split(".")
+		if (ss.length < 2) {
+			reportError("unable to load test: "+ suiteText);
+			return
+		}
+		var testNum = ss[0];
+		var xmlName = ss.slice(1).join(".");
+		loadCodeFromTest(codeMirrors, testNum, xmlName);
+	} else {
+		setDefaults(codeMirrors);
 	}
 
 	$("#saveButton").click(function(ev) { 
@@ -200,7 +232,6 @@ function init() {
     		validateCode(codeMirrors);
 		});		
 	}
-	validateCode(codeMirrors);
 
 }
 

@@ -80,11 +80,11 @@ func (this *validator) translate(relaxngStr string) (string, error) {
 	}()
 	g, err := ParseGrammar([]byte(relaxngStr))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("relaxng parse error: %v, couldn't parse `%s`", err, relaxngStr)
 	}
 	katy, err := Translate(g)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("translate error: %v", err)
 	}
 	return katy.String(), nil
 }
@@ -97,15 +97,15 @@ func (this *validator) validate(relaxngStr, xmlStr string) (bool, error) {
 	}()
 	g, err := ParseGrammar([]byte(relaxngStr))
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("relaxng parse error: %v, couldn't parse `%s`", err, relaxngStr)
 	}
 	var m interface{}
 	if err := xml.Unmarshal([]byte(xmlStr), &m); err != nil {
-		return false, err
+		return false, fmt.Errorf("xml input parse error: %v, couldn't parse `%s`", err, xmlStr)
 	}
 	katy, err := Translate(g)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("translate error: %v", err)
 	}
 	err = Validate(katy, []byte(xmlStr))
 	if err != nil {
