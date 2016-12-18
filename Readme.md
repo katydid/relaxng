@@ -52,6 +52,8 @@ Steps:
  - Next these simplified RelaxNG XML Grammars are parsed and translated to Katydid Relapse.
  - Finally the translated Relapse is used to validate the XML.
 
+Viewing all tests can be done in the playground by going to this [link](http://katydid.github.io/relaxng/play/index.html?testsuite=049.1.v), which will load the first test, and then clicking the *NextTest* button.
+
 ### Example 1
 
 The Simplified RelaxNG Grammar
@@ -70,12 +72,16 @@ The Simplified RelaxNG Grammar
 </grammar>
 ```
 
-is translated to this Katydid Grammar
+is translated to this Relapse Grammar
 
 ```
 @element1
-
-#element1 = foo: <empty>
+#element1={
+    elem_foo:(<empty>|@ws);
+    (@ws)*;
+}
+#ws=->whitespace($string)
+#text=->anytext($string)
 ```
 
 
@@ -100,12 +106,16 @@ The Simplified RelaxNG Grammar
 </grammar>
 ```
 
-is translated to this Katydid Grammar
+is translated to this Relapse Grammar
 
 ```
 @element1
-
-#element1 = foo: "@bar": (->type($string))*
+#element1={
+    elem_foo:attr_bar:(@text)*;
+    (@ws)*;
+}
+#ws=->whitespace($string)
+#text=->anytext($string)
 ```
 
 ### Example 3
@@ -153,25 +163,33 @@ The Simplified RelaxNG Grammar
 </grammar>
 ```
 
-is translated to this Katydid Grammar
+is translated to this Relapse Grammar
 
 ```
 @element1
-
-#element1 = foo: (
-    [
-        "@bar":<empty>,
-        @element2
-    ] |
-    [
-        "@bar":(->type($string))*,
-        @element3
-    ]
-)
-
-#element2 = baz1: <empty>
-
-#element3 = baz2: <empty>
+#element1={
+    elem_foo:(
+        [
+            attr_bar:@ws,
+            @element2
+        ] |
+        [
+            attr_bar:(@text)*,
+            @element3
+        ]
+    );
+    (@ws)*;
+}
+#element2={
+    elem_baz1:(<empty>|@ws);
+    (@ws)*;
+}
+#element3={
+    elem_baz2:(<empty>|@ws);
+    (@ws)*;
+}
+#ws=->whitespace($string)
+#text=->anytext($string)
 ```
 
 ## Known Issues
