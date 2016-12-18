@@ -101,7 +101,7 @@ function saveCode(codeMirrors) {
     });
 }
 
-function loadCode(codeMirrors) {
+function loadCodeFromGist(codeMirrors) {
 	var github = new Github({});
 	var gist = github.getGist(gistText);
 	gist.read(function(err, content) {
@@ -172,7 +172,7 @@ function init() {
 	if (gistText == undefined) {
 		setDefaults(codeMirrors);
 	} else {
-		loadCode(codeMirrors);
+		loadCodeFromGist(codeMirrors);
 		if (!(share == undefined)) {
 			displayShareBox();
 	    }
