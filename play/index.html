@@ -118,22 +118,20 @@ function loadCodeFromGist(codeMirrors) {
 
 function loadCodeFromTest(codeMirrors, testnum, xmlName) {
 	$.ajax({
-	  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/s.rng',
+	  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/p.rng',
 	  dataType: "text",
-	  async: false,
 	  success: function(data) {
     	codeMirrors["relaxng"].setValue(data); 
+    	$.ajax({
+		  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/' + xmlName + '.xml',
+		  dataType: "text",
+		  success: function(data) {
+	    	codeMirrors["xml"].setValue(data); 
+	    	validateCode(codeMirrors);
+		  }
+		});
 	  }
 	});
-	$.ajax({
-	  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/' + xmlName + '.xml',
-	  dataType: "text",
-	  async: false,
-	  success: function(data) {
-    	codeMirrors["xml"].setValue(data); 
-	  }
-	});
-	validateCode(codeMirrors);
 }
 
 function displayShareBox() {
