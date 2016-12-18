@@ -16,6 +16,7 @@ package relaxng
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/katydid/katydid/relapse/ast"
@@ -23,23 +24,46 @@ import (
 	"github.com/katydid/katydid/relapse/funcs"
 )
 
-//Token is a function used in relapse to validate values as described here
-//http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
-func Token(s funcs.String) funcs.String {
-	return &token{StripTextPrefix(s)}
+func stripTextPrefix(s string) (string, error) {
+	if !strings.HasPrefix(s, "text_") {
+		return "", fmt.Errorf("%q is not of type text", s)
+	}
+	return strings.Replace(s, "text_", "", 1), nil
 }
 
+func newTokenValue(t string) *ast.Pattern {
+	return combinator.Value(&token{funcs.StringVar(), funcs.StringConst(t), ""})
+}
+
+// token is a function used in relapse to validate values as described here
+// http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
 type token struct {
 	S funcs.String
+	C funcs.ConstString
+	c string
 }
 
-func (this *token) Eval() (string, error) {
+func (this *token) Init() error {
+	c, err := this.C.Eval()
+	if err != nil {
+		return err
+	}
+	this.c = c
+	return nil
+}
+
+func (this *token) Eval() (bool, error) {
 	s, err := this.S.Eval()
 	if err != nil {
-		return "", err
+		return false, nil
+	}
+	s, err = stripTextPrefix(s)
+	if err != nil {
+		return false, nil
 	}
 	ss := tokenize(s)
-	return strings.Join(ss, " "), nil
+	s = strings.Join(ss, " ")
+	return s == this.c, nil
 }
 
 func tokenize(s string) []string {
@@ -67,79 +91,128 @@ func init() {
 	funcs.Register("token", new(token))
 }
 
-//StripTextPrefix is a function used in relapse to remove the text prefix added by the xml parser.
-func StripTextPrefix(s funcs.String) funcs.String {
-	return &stripTextPrefix{s}
-}
-
-type stripTextPrefix struct {
+type whitespace struct {
 	S funcs.String
 }
 
-func (this *stripTextPrefix) Eval() (string, error) {
+func (this *whitespace) Eval() (bool, error) {
 	s, err := this.S.Eval()
-	if err != nil {
-		return "", err
-	}
-	if strings.HasPrefix(s, "text_") {
-		return strings.Replace(s, "text_", "", 1), nil
-	}
-	return "", fmt.Errorf("%q is not of type text", s)
-}
-
-func init() {
-	funcs.Register("text", new(stripTextPrefix))
-}
-
-//Assert is a function used in relapse to return true if the input bool is true and no error was returned.
-func Assert(b funcs.Bool) funcs.Bool {
-	return &assert{b}
-}
-
-type assert struct {
-	B funcs.Bool
-}
-
-func (this *assert) Eval() (bool, error) {
-	b, err := this.B.Eval()
 	if err != nil {
 		return false, nil
 	}
-	return b, nil
+	s, err = stripTextPrefix(s)
+	if err != nil {
+		return false, nil
+	}
+	return len(strings.TrimSpace(s)) == 0, nil
 }
 
 func init() {
-	funcs.Register("assert", new(assert))
+	funcs.Register("whitespace", new(whitespace))
+}
+
+type anytext struct {
+	S funcs.String
+}
+
+func (this *anytext) Eval() (bool, error) {
+	s, err := this.S.Eval()
+	if err != nil {
+		return false, nil
+	}
+	_, err = stripTextPrefix(s)
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
+}
+
+func init() {
+	funcs.Register("anytext", new(anytext))
 }
 
 func newWhitespace() *ast.Pattern {
-	return combinator.Value(Assert(funcs.Regex(funcs.StringConst("^(\\s)+$"), StripTextPrefix(funcs.StringVar()))))
+	return combinator.Value(&whitespace{funcs.StringVar()})
 }
 
 func newEmptyValue() *ast.Pattern {
-	return combinator.Value(Assert(funcs.StringEq(Token(funcs.StringVar()), funcs.StringConst(""))))
+	return combinator.Value(&whitespace{funcs.StringVar()})
 }
 
-func newTextValue() *ast.Pattern {
-	return combinator.Value(funcs.TypeString(StripTextPrefix(funcs.StringVar())))
+func newAnyValue() *ast.Pattern {
+	return combinator.Value(&anytext{funcs.StringVar()})
 }
 
-func newValue(value string) *ast.Pattern {
-	return combinator.Value(Assert(
-		funcs.StringEq(
-			StripTextPrefix(funcs.StringVar()),
-			funcs.StringConst(value),
-		),
-	))
+func newTextValue(value string) *ast.Pattern {
+	return combinator.Value(&text{funcs.StringVar(), funcs.StringConst(value), ""})
 }
 
-func newToken(token string) *ast.Pattern {
-	return combinator.Value(Assert(
-		funcs.StringEq(
-			Token(funcs.StringVar()),
-			funcs.StringConst(token),
-		),
-	))
+type text struct {
+	S funcs.String
+	C funcs.ConstString
+	c string
+}
+
+func (this *text) Init() error {
+	c, err := this.C.Eval()
+	if err != nil {
+		return err
+	}
+	this.c = c
+	return nil
+}
+
+func (this *text) Eval() (bool, error) {
+	s, err := this.S.Eval()
+	if err != nil {
+		return false, nil
+	}
+	s, err = stripTextPrefix(s)
+	if err != nil {
+		return false, nil
+	}
+	return s == this.c, nil
+}
+
+func init() {
+	funcs.Register("text", new(text))
+}
+
+type list struct {
+	r    *regexp.Regexp
+	S    funcs.String
+	Expr funcs.ConstString
+}
+
+func (this *list) Init() error {
+	e, err := this.Expr.Eval()
+	if err != nil {
+		return err
+	}
+	r, err := regexp.Compile(e)
+	if err != nil {
+		return err
+	}
+	this.r = r
+	return nil
+}
+
+func (this *list) Eval() (bool, error) {
+	s, err := this.S.Eval()
+	if err != nil {
+		return false, nil
+	}
+	s, err = stripTextPrefix(s)
+	if err != nil {
+		return false, nil
+	}
+	ss := tokenize(s)
+	s = strings.Join(ss, " ")
+	return this.r.MatchString(s), nil
+}
+
+func init() {
+	funcs.Register("list", new(list))
 }
 
 func newList(nameOrPattern *NameOrPattern) *ast.Pattern {
@@ -147,7 +220,7 @@ func newList(nameOrPattern *NameOrPattern) *ast.Pattern {
 	if err != nil {
 		return ast.NewNot(ast.NewZAny())
 	}
-	val := combinator.Value(Assert(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(funcs.StringVar()))))
+	val := combinator.Value(&list{nil, funcs.StringVar(), funcs.StringConst("^" + regexStr + "$")})
 	if !nullable {
 		return val
 	}

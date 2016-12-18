@@ -107,18 +107,18 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 		)
 	}
 	if p.Text != nil {
-		return ast.NewZeroOrMore(newTextValue())
+		return ast.NewZeroOrMore(newAnyValue())
 	}
 	if p.Data != nil {
 		if len(p.Data.DatatypeLibrary) > 0 {
 			panic("data datatypeLibrary not supported")
 		}
 		if p.Data.Except == nil {
-			return ast.NewOr(newTextValue(), ast.NewEmpty())
+			return ast.NewOr(newAnyValue(), ast.NewEmpty())
 		}
 		expr, nullable := translateLeaf(p.Data.Except)
 		v := ast.NewAnd(
-			newTextValue(),
+			newAnyValue(),
 			ast.NewNot(expr),
 		)
 		if nullable {
@@ -202,7 +202,7 @@ func newTreeNode(n *NameOrPattern, pattern *ast.Pattern) *ast.Pattern {
 		if len(n.Name.Ns) > 0 {
 			return ast.NewTreeNode(ast.NewStringName("elem_"+n.Name.Text), ast.NewConcat(
 				ast.NewTreeNode(ast.NewStringName("attr_xmlns"),
-					newValue(n.Name.Ns),
+					newTextValue(n.Name.Ns),
 				),
 				pattern,
 			))
@@ -255,13 +255,13 @@ func translateLeaf(p *NameOrPattern) (*ast.Pattern, bool) {
 		}
 		text := p.Value.Text
 		if p.Value.IsString() {
-			return newValue(text), len(text) == 0
+			return newTextValue(text), len(text) == 0
 		}
 		text = strings.Replace(text, "\n", "", -1)
 		text = strings.Replace(text, "\r", "", -1)
 		text = strings.Replace(text, "\t", "", -1)
 		text = strings.TrimSpace(text)
-		return newToken(text), len(text) == 0
+		return newTokenValue(text), len(text) == 0
 	}
 	if p.Choice != nil {
 		l, nl := translateLeaf(p.Choice.Left)
