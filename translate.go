@@ -21,21 +21,54 @@ import (
 	"github.com/katydid/katydid/relapse/ast"
 )
 
+func nameConflict(ns []string, name string) bool {
+	for _, n := range ns {
+		if n == name {
+			return true
+		}
+	}
+	return false
+}
+
+type names struct {
+	ws  string
+	any string
+}
+
+func newReserved(names []string, name string) string {
+	for nameConflict(names, name) {
+		name += "1"
+	}
+	return name
+}
+
 func translate(g *Grammar) (*ast.Grammar, error) {
+	ds := make([]string, len(g.Define)+1)
+	ds[0] = "main"
+	for i, d := range g.Define {
+		ds[i+1] = d.Name
+	}
+	reserved := &names{
+		ws:  newReserved(ds, "ws"),
+		any: newReserved(ds, "text"),
+	}
+
 	refs := make(ast.RefLookup)
-	refs["main"] = translatePattern(g.Start, false)
+	refs["main"] = translatePattern(g.Start, false, reserved)
 	for _, d := range g.Define {
-		pattern := translatePattern(d.Element.Right, false)
+		pattern := translatePattern(d.Element.Right, false, reserved)
 		if !hasNsName(d.Element.Left) {
 			pattern = addXmlns(pattern)
 		}
 		pattern = newTreeNode(d.Element.Left, pattern)
 		pattern = ast.NewInterleave(pattern,
-			ast.NewZeroOrMore(newWhitespace()),
+			ast.NewZeroOrMore(ast.NewReference(reserved.ws)),
 		)
 		refs[d.Name] = pattern
-
 	}
+
+	refs[reserved.ws] = newWhitespace()
+	refs[reserved.any] = newAnyValue()
 	gg := ast.NewGrammar(refs)
 	gg.Format()
 	return gg, nil
@@ -93,32 +126,32 @@ func hasAttr(p *NameOrPattern) bool {
 	panic(fmt.Sprintf("unreachable pattern %v", p))
 }
 
-func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
+func translatePattern(p *NameOrPattern, attr bool, reserved *names) *ast.Pattern {
 	if p.NotAllowed != nil {
 		return ast.NewNot(ast.NewZAny())
 	}
 	if p.Empty != nil {
 		if attr {
-			return newEmptyValue()
+			return ast.NewReference(reserved.ws)
 		}
 		return ast.NewOr(
 			ast.NewEmpty(),
-			newEmptyValue(),
+			ast.NewReference(reserved.ws),
 		)
 	}
 	if p.Text != nil {
-		return ast.NewZeroOrMore(newAnyValue())
+		return ast.NewZeroOrMore(ast.NewReference(reserved.any))
 	}
 	if p.Data != nil {
 		if len(p.Data.DatatypeLibrary) > 0 {
 			panic("data datatypeLibrary not supported")
 		}
 		if p.Data.Except == nil {
-			return ast.NewOr(newAnyValue(), ast.NewEmpty())
+			return ast.NewOr(ast.NewReference(reserved.any), ast.NewEmpty())
 		}
 		expr, nullable := translateLeaf(p.Data.Except)
 		v := ast.NewAnd(
-			newAnyValue(),
+			ast.NewReference(reserved.any),
 			ast.NewNot(expr),
 		)
 		if nullable {
@@ -138,24 +171,24 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 	}
 	if p.Attribute != nil {
 		nameExpr := translateNameClass(p.Attribute.Left, true)
-		pattern := translatePattern(p.Attribute.Right, true)
+		pattern := translatePattern(p.Attribute.Right, true, reserved)
 		return ast.NewTreeNode(nameExpr, pattern)
 	}
 	if p.Ref != nil {
 		return ast.NewReference(p.Ref.Name)
 	}
 	if p.OneOrMore != nil {
-		inside := translatePattern(p.OneOrMore.NameOrPattern, attr)
+		inside := translatePattern(p.OneOrMore.NameOrPattern, attr, reserved)
 		return ast.NewConcat(inside, ast.NewZeroOrMore(inside))
 	}
 	if p.Choice != nil {
-		left := translatePattern(p.Choice.Left, attr)
-		right := translatePattern(p.Choice.Right, attr)
+		left := translatePattern(p.Choice.Left, attr, reserved)
+		right := translatePattern(p.Choice.Right, attr, reserved)
 		return ast.NewOr(left, right)
 	}
 	if p.Group != nil {
-		left := translatePattern(p.Group.Left, attr)
-		right := translatePattern(p.Group.Right, attr)
+		left := translatePattern(p.Group.Left, attr, reserved)
+		right := translatePattern(p.Group.Right, attr, reserved)
 		if attr {
 			return ast.NewInterleave(left, right)
 		}
@@ -168,8 +201,8 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 		return ast.NewConcat(left, right)
 	}
 	if p.Interleave != nil {
-		left := translatePattern(p.Interleave.Left, attr)
-		right := translatePattern(p.Interleave.Right, attr)
+		left := translatePattern(p.Interleave.Left, attr, reserved)
+		right := translatePattern(p.Interleave.Right, attr, reserved)
 		return ast.NewInterleave(left, right)
 	}
 	panic(fmt.Sprintf("unreachable pattern %v", p))
