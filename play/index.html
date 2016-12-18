@@ -31,6 +31,7 @@ Copyright 2015 Walter Schulze
   <script src="https://cdn.rawgit.com/katydid/play/gh-pages/vendor/codemirror.net/addon/mode/simple.js"></script>
   <script src="main.js"></script>
   <script src="example.js"></script>
+  <script src="tests.js"></script>
   <script>
 
 function getUrlParameter(sParam) {
@@ -116,7 +117,7 @@ function loadCodeFromGist(codeMirrors) {
 	});
 }
 
-function loadCodeFromTest(codeMirrors, testnum, xmlName) {
+function loadCodeFromTest(codeMirrors, testnum, xmlName, nextTest) {
 	$.ajax({
 	  url: 'http://katydid.github.io/relaxng/RelaxTestSuite/' + testnum + '/p.rng',
 	  dataType: "text",
@@ -128,6 +129,8 @@ function loadCodeFromTest(codeMirrors, testnum, xmlName) {
 		  success: function(data) {
 	    	codeMirrors["xml"].setValue(data); 
 	    	validateCode(codeMirrors);
+	    	document.getElementById("nextref").setAttribute("href", "./index.html?testsuite="+nextTest);
+	    	document.getElementById("nextButton").setAttribute("style", "");
 		  }
 		});
 	  }
@@ -203,7 +206,13 @@ function init() {
 		}
 		var testNum = ss[0];
 		var xmlName = ss.slice(1).join(".");
-		loadCodeFromTest(codeMirrors, testNum, xmlName);
+		var testIndex = tests.indexOf(suiteText);
+		var nextIndex = testIndex + 1;
+		var nextTest = "";
+		if (nextIndex < tests.length) {
+			nextTest = tests[nextIndex];
+		}
+		loadCodeFromTest(codeMirrors, testNum, xmlName, nextTest);
 	} else {
 		setDefaults(codeMirrors);
 	}
@@ -263,6 +272,7 @@ function init() {
       </ul> -->
       <ul class="nav navbar-nav navbar-right">
       	<li id="autosizeButton"><a href="#">Autosize</a></li>
+      	<li id="nextButton" style ='display: none'><a id="nextref" href="#">NextTest</a></li>
         <li><a href="#" id="saveButton">Share</a></li>
       </ul>
     </div><!-- /.navbar-collapse -->
