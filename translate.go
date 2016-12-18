@@ -16,10 +16,9 @@ package relaxng
 
 import (
 	"fmt"
-	"github.com/katydid/katydid/relapse/ast"
-	"github.com/katydid/katydid/relapse/combinator"
-	"github.com/katydid/katydid/relapse/funcs"
 	"strings"
+
+	"github.com/katydid/katydid/relapse/ast"
 )
 
 func translate(g *Grammar) (*ast.Grammar, error) {
@@ -32,7 +31,7 @@ func translate(g *Grammar) (*ast.Grammar, error) {
 		}
 		pattern = newTreeNode(d.Element.Left, pattern)
 		pattern = ast.NewInterleave(pattern,
-			ast.NewZeroOrMore(NewLeaf(funcs.Regex(funcs.StringConst("^(\\s)+$"), StripTextPrefix(funcs.StringVar())))),
+			ast.NewZeroOrMore(newWhitespace()),
 		)
 		refs[d.Name] = pattern
 
@@ -40,10 +39,6 @@ func translate(g *Grammar) (*ast.Grammar, error) {
 	gg := ast.NewGrammar(refs)
 	gg.Format()
 	return gg, nil
-}
-
-func NewLeaf(f funcs.Bool) *ast.Pattern {
-	return combinator.Value(TypeAndTrue(f))
 }
 
 func addXmlns(p *ast.Pattern) *ast.Pattern {
@@ -104,26 +99,26 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 	}
 	if p.Empty != nil {
 		if attr {
-			return NewLeaf(funcs.StringEq(Token(StripTextPrefix(funcs.StringVar())), funcs.StringConst("")))
+			return newEmptyValue()
 		}
 		return ast.NewOr(
 			ast.NewEmpty(),
-			NewLeaf(funcs.StringEq(Token(StripTextPrefix(funcs.StringVar())), funcs.StringConst(""))),
+			newEmptyValue(),
 		)
 	}
 	if p.Text != nil {
-		return ast.NewZeroOrMore(NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))))
+		return ast.NewZeroOrMore(newTextValue())
 	}
 	if p.Data != nil {
 		if len(p.Data.DatatypeLibrary) > 0 {
 			panic("data datatypeLibrary not supported")
 		}
 		if p.Data.Except == nil {
-			return ast.NewOr(NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))), ast.NewEmpty())
+			return ast.NewOr(newTextValue(), ast.NewEmpty())
 		}
 		expr, nullable := translateLeaf(p.Data.Except)
 		v := ast.NewAnd(
-			NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))),
+			newTextValue(),
 			ast.NewNot(expr),
 		)
 		if nullable {
@@ -139,15 +134,7 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 		return ast.NewOr(v, ast.NewEmpty())
 	}
 	if p.List != nil {
-		regexStr, nullable, err := listToRegex(p.List.NameOrPattern)
-		if err != nil {
-			return combinator.Value(funcs.BoolConst(false))
-		}
-		val := NewLeaf(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(StripTextPrefix(funcs.StringVar()))))
-		if !nullable {
-			return val
-		}
-		return ast.NewOr(val, ast.NewEmpty())
+		return newList(p.List.NameOrPattern)
 	}
 	if p.Attribute != nil {
 		nameExpr := translateNameClass(p.Attribute.Left, true)
@@ -215,12 +202,7 @@ func newTreeNode(n *NameOrPattern, pattern *ast.Pattern) *ast.Pattern {
 		if len(n.Name.Ns) > 0 {
 			return ast.NewTreeNode(ast.NewStringName("elem_"+n.Name.Text), ast.NewConcat(
 				ast.NewTreeNode(ast.NewStringName("attr_xmlns"),
-					NewLeaf(
-						funcs.StringEq(
-							StripTextPrefix(funcs.StringVar()),
-							funcs.StringConst(n.Name.Ns),
-						),
-					),
+					newValue(n.Name.Ns),
 				),
 				pattern,
 			))
@@ -273,13 +255,13 @@ func translateLeaf(p *NameOrPattern) (*ast.Pattern, bool) {
 		}
 		text := p.Value.Text
 		if p.Value.IsString() {
-			return NewLeaf(funcs.StringEq(funcs.StringConst(text), StripTextPrefix(funcs.StringVar()))), len(text) == 0
+			return newValue(text), len(text) == 0
 		}
 		text = strings.Replace(text, "\n", "", -1)
 		text = strings.Replace(text, "\r", "", -1)
 		text = strings.Replace(text, "\t", "", -1)
 		text = strings.TrimSpace(text)
-		return NewLeaf(funcs.StringEq(funcs.StringConst(text), Token(StripTextPrefix(funcs.StringVar())))), len(text) == 0
+		return newToken(text), len(text) == 0
 	}
 	if p.Choice != nil {
 		l, nl := translateLeaf(p.Choice.Left)
@@ -287,55 +269,4 @@ func translateLeaf(p *NameOrPattern) (*ast.Pattern, bool) {
 		return ast.NewOr(l, r), nl || nr
 	}
 	panic(fmt.Sprintf("unsupported leaf %v", p))
-}
-
-func listToRegex(p *NameOrPattern) (string, bool, error) {
-	if p.Empty != nil {
-		return "", true, nil
-	}
-	if p.Data != nil {
-		if p.Data.Except == nil {
-			return `(\S)*`, false, nil
-		}
-	}
-	if p.Value != nil {
-		if len(p.Value.Ns) > 0 {
-			panic("list value ns not supported")
-		}
-		if strings.Contains(p.Value.Text, " ") {
-			return "", false, fmt.Errorf("unable to match a list")
-		}
-		return p.Value.Text, len(p.Value.Text) == 0, nil
-	}
-	if p.OneOrMore != nil {
-		s, nullable, err := listToRegex(p.OneOrMore.NameOrPattern)
-		return `(\s)?` + s + "(\\s" + s + ")*", nullable, err
-	}
-	if p.Choice != nil {
-		l, nl, errl := listToRegex(p.Choice.Left)
-		r, nr, errr := listToRegex(p.Choice.Right)
-		if errl != nil && errr != nil {
-			return "", false, errl
-		}
-		if errl != nil {
-			return r, nr, nil
-		}
-		if errr != nil {
-			return l, nl, nil
-		}
-		return "(" + l + "|" + r + ")", nl || nr, nil
-	}
-	if p.Group != nil {
-		l, nl, errl := listToRegex(p.Group.Left)
-		r, nr, errr := listToRegex(p.Group.Right)
-		var err error = nil
-		if errl != nil {
-			err = errl
-		}
-		if errr != nil {
-			err = errr
-		}
-		return l + `\s` + r, nl && nr, err
-	}
-	panic(fmt.Sprintf("unsupported list %v", p))
 }
