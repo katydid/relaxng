@@ -167,7 +167,7 @@ function init() {
   		viewportMargin: Infinity
 	});
 	codeMirrors["xml"] = xmlCodeMirror;
-	$("#inputheading").text("xml input");
+	$("#inputheading").text("XML input");
 
 	if (gistText == undefined) {
 		setDefaults(codeMirrors);
@@ -200,6 +200,7 @@ function init() {
     		validateCode(codeMirrors);
 		});		
 	}
+	validateCode(codeMirrors);
 
 }
 
@@ -286,16 +287,11 @@ function init() {
 	<div class="col-xs-1"></div>
 </div>
 <div class="row">
-	<div class="col-xs-6">
-		<div class="row">
-			<div class="col-xs-2"></div>
-			<div class="col-xs-10">
-				<h3>Relapse</h3>	
-			</div>
-		</div>
+	<div class="col-xs-1"></div>
+	<div class="col-xs-10">
+		<h3>Relapse: translated from Simplified RelaxNG and used to validate the XML input</h3>	
 	</div>
-	<div class="col-xs-6">
-	</div>
+	<div class="col-xs-1"></div>
 </div>
 <div class="row">
 	<div class="col-xs-1"></div>
