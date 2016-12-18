@@ -121,27 +121,27 @@ func translatePattern(p *NameOrPattern, attr bool) *ast.Pattern {
 		if p.Data.Except == nil {
 			return ast.NewOr(NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))), ast.NewEmpty())
 		}
-		expr, nullable := translateLeaf(p.Data.Except, StripTextPrefix(funcs.StringVar()))
-		v := NewLeaf(funcs.And(
-			funcs.TypeString(StripTextPrefix(funcs.StringVar())),
-			funcs.Not(expr),
-		))
+		expr, nullable := translateLeaf(p.Data.Except)
+		v := ast.NewAnd(
+			NewLeaf(funcs.TypeString(StripTextPrefix(funcs.StringVar()))),
+			ast.NewNot(expr),
+		)
 		if nullable {
 			return ast.NewAnd(v, ast.NewNot(ast.NewEmpty()))
 		}
 		return ast.NewOr(v, ast.NewEmpty())
 	}
 	if p.Value != nil {
-		v, nullable := translateLeaf(p, StripTextPrefix(funcs.StringVar()))
+		v, nullable := translateLeaf(p)
 		if !nullable {
-			return NewLeaf(v)
+			return v
 		}
-		return ast.NewOr(NewLeaf(v), ast.NewEmpty())
+		return ast.NewOr(v, ast.NewEmpty())
 	}
 	if p.List != nil {
 		regexStr, nullable, err := listToRegex(p.List.NameOrPattern)
 		if err != nil {
-			return NewLeaf(funcs.BoolConst(false))
+			return combinator.Value(funcs.BoolConst(false))
 		}
 		val := NewLeaf(funcs.Regex(funcs.StringConst("^"+regexStr+"$"), Token(StripTextPrefix(funcs.StringVar()))))
 		if !nullable {
@@ -266,25 +266,25 @@ func translateNameClass(n *NameOrPattern, attr bool) *ast.NameExpr {
 	panic(fmt.Sprintf("unreachable nameclass %v", n))
 }
 
-func translateLeaf(p *NameOrPattern, v funcs.String) (funcs.Bool, bool) {
+func translateLeaf(p *NameOrPattern) (*ast.Pattern, bool) {
 	if p.Value != nil {
 		if len(p.Value.Ns) > 0 {
 			panic("value ns not supported")
 		}
 		text := p.Value.Text
 		if p.Value.IsString() {
-			return funcs.StringEq(funcs.StringConst(text), v), len(text) == 0
+			return NewLeaf(funcs.StringEq(funcs.StringConst(text), StripTextPrefix(funcs.StringVar()))), len(text) == 0
 		}
 		text = strings.Replace(text, "\n", "", -1)
 		text = strings.Replace(text, "\r", "", -1)
 		text = strings.Replace(text, "\t", "", -1)
 		text = strings.TrimSpace(text)
-		return funcs.StringEq(funcs.StringConst(text), Token(v)), len(text) == 0
+		return NewLeaf(funcs.StringEq(funcs.StringConst(text), Token(StripTextPrefix(funcs.StringVar())))), len(text) == 0
 	}
 	if p.Choice != nil {
-		l, nl := translateLeaf(p.Choice.Left, v)
-		r, nr := translateLeaf(p.Choice.Right, v)
-		return funcs.Or(l, r), nl || nr
+		l, nl := translateLeaf(p.Choice.Left)
+		r, nr := translateLeaf(p.Choice.Right)
+		return ast.NewOr(l, r), nl || nr
 	}
 	panic(fmt.Sprintf("unsupported leaf %v", p))
 }
