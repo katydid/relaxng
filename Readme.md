@@ -196,7 +196,7 @@ is translated to this Relapse Grammar
 
 There are quite a few known issues:
   - Only simplified grammars are supported.
-  - namespaces are not supported.
+  - [namespaces are not supported](https://github.com/katydid/relaxng/issues/2).
   - datatypes: only string and token are currently supported.
   - datatypeLibraries are not supported.
 
