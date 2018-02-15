@@ -17,10 +17,11 @@ package relaxng
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/katydid/katydid/relapse/ast"
-	"github.com/katydid/katydid/relapse/combinator"
+	c "github.com/katydid/katydid/relapse/combinator"
 	"github.com/katydid/katydid/relapse/funcs"
 )
 
@@ -32,24 +33,29 @@ func stripTextPrefix(s string) (string, error) {
 }
 
 func newTokenValue(t string) *ast.Pattern {
-	return combinator.Value(&token{funcs.StringVar(), funcs.StringConst(t), ""})
+	return c.Value(ast.NewFunction("token", c.StringVar(), c.StringConst(t)))
 }
 
 // token is a function used in relapse to validate values as described here
 // http://books.xmlschemata.org/relaxng/relax-CHP-7-SECT-4.html
 type token struct {
-	S funcs.String
-	C funcs.ConstString
-	c string
+	S           funcs.String
+	c           string
+	hash        uint64
+	hasVariable bool
 }
 
-func (this *token) Init() error {
-	c, err := this.C.Eval()
+func Token(S funcs.String, C funcs.ConstString) (funcs.Bool, error) {
+	c, err := C.Eval()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	this.c = c
-	return nil
+	return funcs.TrimBool(&token{
+		S:           S,
+		c:           c,
+		hash:        funcs.Hash("token", C, S),
+		hasVariable: S.HasVariable(),
+	}), nil
 }
 
 func (this *token) Eval() (bool, error) {
@@ -64,6 +70,37 @@ func (this *token) Eval() (bool, error) {
 	ss := tokenize(s)
 	s = strings.Join(ss, " ")
 	return s == this.c, nil
+}
+
+func (this *token) Compare(that funcs.Comparable) int {
+	if this.Hash() != that.Hash() {
+		if this.Hash() < that.Hash() {
+			return -1
+		}
+		return 1
+	}
+	if other, ok := that.(*token); ok {
+		if c := this.S.Compare(other.S); c != 0 {
+			return c
+		}
+		if c := strings.Compare(this.c, other.c); c != 0 {
+			return c
+		}
+		return 0
+	}
+	return strings.Compare(this.String(), that.String())
+}
+
+func (this *token) HasVariable() bool {
+	return this.hasVariable
+}
+
+func (this *token) String() string {
+	return "token(" + this.S.String() + "," + strconv.Quote(this.c) + ")"
+}
+
+func (this *token) Hash() uint64 {
+	return this.hash
 }
 
 func tokenize(s string) []string {
@@ -88,11 +125,21 @@ func tokenize(s string) []string {
 }
 
 func init() {
-	funcs.Register("token", new(token))
+	funcs.Register("token", Token)
 }
 
 type whitespace struct {
-	S funcs.String
+	S           funcs.String
+	hash        uint64
+	hasVariable bool
+}
+
+func Whitespace(S funcs.String) funcs.Bool {
+	return funcs.TrimBool(&whitespace{
+		S:           S,
+		hash:        funcs.Hash("whitespace", S),
+		hasVariable: S.HasVariable(),
+	})
 }
 
 func (this *whitespace) Eval() (bool, error) {
@@ -107,12 +154,50 @@ func (this *whitespace) Eval() (bool, error) {
 	return len(strings.TrimSpace(s)) == 0, nil
 }
 
+func (this *whitespace) Compare(that funcs.Comparable) int {
+	if this.Hash() != that.Hash() {
+		if this.Hash() < that.Hash() {
+			return -1
+		}
+		return 1
+	}
+	if other, ok := that.(*whitespace); ok {
+		if c := this.S.Compare(other.S); c != 0 {
+			return c
+		}
+		return 0
+	}
+	return strings.Compare(this.String(), that.String())
+}
+
+func (this *whitespace) HasVariable() bool {
+	return this.hasVariable
+}
+
+func (this *whitespace) String() string {
+	return "whitespace(" + this.S.String() + ")"
+}
+
+func (this *whitespace) Hash() uint64 {
+	return this.hash
+}
+
 func init() {
-	funcs.Register("whitespace", new(whitespace))
+	funcs.Register("whitespace", Whitespace)
 }
 
 type anytext struct {
-	S funcs.String
+	S           funcs.String
+	hash        uint64
+	hasVariable bool
+}
+
+func AnyText(S funcs.String) funcs.Bool {
+	return funcs.TrimBool(&anytext{
+		S:           S,
+		hash:        funcs.Hash("anytext", S),
+		hasVariable: S.HasVariable(),
+	})
 }
 
 func (this *anytext) Eval() (bool, error) {
@@ -127,39 +212,72 @@ func (this *anytext) Eval() (bool, error) {
 	return true, nil
 }
 
+func (this *anytext) Compare(that funcs.Comparable) int {
+	if this.Hash() != that.Hash() {
+		if this.Hash() < that.Hash() {
+			return -1
+		}
+		return 1
+	}
+	if other, ok := that.(*anytext); ok {
+		if c := this.S.Compare(other.S); c != 0 {
+			return c
+		}
+		return 0
+	}
+	return strings.Compare(this.String(), that.String())
+}
+
+func (this *anytext) HasVariable() bool {
+	return this.hasVariable
+}
+
+func (this *anytext) String() string {
+	return "anytext(" + this.S.String() + ")"
+}
+
+func (this *anytext) Hash() uint64 {
+	return this.hash
+}
+
 func init() {
-	funcs.Register("anytext", new(anytext))
+	funcs.Register("anytext", AnyText)
 }
 
 func newWhitespace() *ast.Pattern {
-	return combinator.Value(&whitespace{funcs.StringVar()})
+	return c.Value(ast.NewFunction("whitespace", c.StringVar()))
 }
 
 func newEmptyValue() *ast.Pattern {
-	return combinator.Value(&whitespace{funcs.StringVar()})
+	return c.Value(ast.NewFunction("whitespace", c.StringVar()))
 }
 
 func newAnyValue() *ast.Pattern {
-	return combinator.Value(&anytext{funcs.StringVar()})
+	return c.Value(ast.NewFunction("anytext", c.StringVar()))
 }
 
 func newTextValue(value string) *ast.Pattern {
-	return combinator.Value(&text{funcs.StringVar(), funcs.StringConst(value), ""})
+	return c.Value(ast.NewFunction("text", c.StringVar(), c.StringConst(value)))
 }
 
 type text struct {
-	S funcs.String
-	C funcs.ConstString
-	c string
+	S           funcs.String
+	c           string
+	hash        uint64
+	hasVariable bool
 }
 
-func (this *text) Init() error {
-	c, err := this.C.Eval()
+func TextFunc(S funcs.String, C funcs.ConstString) (funcs.Bool, error) {
+	c, err := C.Eval()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	this.c = c
-	return nil
+	return funcs.TrimBool(&text{
+		S:           S,
+		c:           c,
+		hash:        funcs.Hash("token", C, S),
+		hasVariable: S.HasVariable(),
+	}), nil
 }
 
 func (this *text) Eval() (bool, error) {
@@ -174,27 +292,65 @@ func (this *text) Eval() (bool, error) {
 	return s == this.c, nil
 }
 
+func (this *text) Compare(that funcs.Comparable) int {
+	if this.Hash() != that.Hash() {
+		if this.Hash() < that.Hash() {
+			return -1
+		}
+		return 1
+	}
+	if other, ok := that.(*text); ok {
+		if c := this.S.Compare(other.S); c != 0 {
+			return c
+		}
+		if c := strings.Compare(this.c, other.c); c != 0 {
+			return c
+		}
+		return 0
+	}
+	return strings.Compare(this.String(), that.String())
+}
+
+func (this *text) HasVariable() bool {
+	return this.hasVariable
+}
+
+func (this *text) String() string {
+	return "text(" + this.S.String() + "," + strconv.Quote(this.c) + ")"
+}
+
+func (this *text) Hash() uint64 {
+	return this.hash
+}
+
 func init() {
-	funcs.Register("text", new(text))
+	funcs.Register("text", TextFunc)
 }
 
 type list struct {
-	r    *regexp.Regexp
-	S    funcs.String
-	Expr funcs.ConstString
+	r           *regexp.Regexp
+	S           funcs.String
+	Expr        funcs.ConstString
+	hash        uint64
+	hasVariable bool
 }
 
-func (this *list) Init() error {
-	e, err := this.Expr.Eval()
+func ListFunc(S funcs.String, Expr funcs.ConstString) (funcs.Bool, error) {
+	e, err := Expr.Eval()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	r, err := regexp.Compile(e)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	this.r = r
-	return nil
+	return funcs.TrimBool(&list{
+		S:           S,
+		r:           r,
+		Expr:        Expr,
+		hash:        funcs.Hash("list", S, Expr),
+		hasVariable: S.HasVariable(),
+	}), nil
 }
 
 func (this *list) Eval() (bool, error) {
@@ -211,8 +367,39 @@ func (this *list) Eval() (bool, error) {
 	return this.r.MatchString(s), nil
 }
 
+func (this *list) Compare(that funcs.Comparable) int {
+	if this.Hash() != that.Hash() {
+		if this.Hash() < that.Hash() {
+			return -1
+		}
+		return 1
+	}
+	if other, ok := that.(*list); ok {
+		if c := this.S.Compare(other.S); c != 0 {
+			return c
+		}
+		if c := this.Expr.Compare(other.Expr); c != 0 {
+			return c
+		}
+		return 0
+	}
+	return strings.Compare(this.String(), that.String())
+}
+
+func (this *list) HasVariable() bool {
+	return this.hasVariable
+}
+
+func (this *list) String() string {
+	return "list(" + this.S.String() + "," + this.Expr.String() + ")"
+}
+
+func (this *list) Hash() uint64 {
+	return this.hash
+}
+
 func init() {
-	funcs.Register("list", new(list))
+	funcs.Register("list", ListFunc)
 }
 
 func newList(nameOrPattern *NameOrPattern) *ast.Pattern {
@@ -220,7 +407,7 @@ func newList(nameOrPattern *NameOrPattern) *ast.Pattern {
 	if err != nil {
 		return ast.NewNot(ast.NewZAny())
 	}
-	val := combinator.Value(&list{nil, funcs.StringVar(), funcs.StringConst("^" + regexStr + "$")})
+	val := c.Value(ast.NewFunction("list", c.StringVar(), c.StringConst("^"+regexStr+"$")))
 	if !nullable {
 		return val
 	}
